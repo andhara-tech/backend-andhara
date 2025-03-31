@@ -6,6 +6,7 @@
 ## 📌 Table of Contents
 
 - [Description](#-description)
+- [Architecture](#-architecture)
 - [Features](#-features)
 - [Installation](#-installation)
 - [Usage](#-usage)
@@ -18,7 +19,49 @@
 
 ## 📌 Description
 
-This project is aim to make a API REST to be connected with the client and make a project for managing the core logic for ANDHARA
+This project is aim to make an API REST to be connected with the client and make a project for managing the core logic for ANDHARA
+
+## 🏗️ Architecture
+
+#### Layered Architecture: (presentation, service, domain, persistence, core)
+
+- **Presentation**: endpoints and controllers to expose the information
+- **Service**: all the business logic and complexity
+- **Domain**: models and interfaces
+- **Persistence**: repositories and database management
+- **Core**: configurations
+
+![Architecture Image](./documentation/img/architecture.png)
+
+```txt
+backend-andhara/
+│── app/
+│   ├── api/                      # (presentation layer)
+│   │   ├── __init__.py
+│   │   ├── products.py
+│   │
+│   ├── services/                 # (service or business logic layer)
+│   │   ├── __init__.py
+│   │   ├── product_service.py
+│   │
+│   ├── models/                   # (domain layer)
+│   │   ├── __init__.py
+│   │   ├── product.py
+│   │
+│   ├── persistence	          # (persistence layer)
+│   │    ├── repositories/
+│   │    │   ├── __init__.py
+│   │    │   ├── product_repo.py
+│   │    │
+│   │    ├── db/
+│   │       ├── __init__.py
+│   │       ├── database.py
+│   │
+│   │── main.py                   # Entry point FastAPI
+│── requirements.txt              # Dependencies
+│── .env                          # Environment variables
+│── README.md
+```
 
 ## 🚀 Features
 
@@ -53,7 +96,7 @@ uv run fastapi
 
 ## 📜 Documentation
 
-For more details, check the [documentation](./docs/README.md).
+For more details, check the [documentation](./documentation/README.md).
 
 ## 🤝 Contribution
 

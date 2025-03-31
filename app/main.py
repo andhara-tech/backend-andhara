@@ -3,6 +3,8 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from app.core.config import Config
+
 
 # Init the entry point of the app
 app = FastAPI()
@@ -10,12 +12,13 @@ app = FastAPI()
 
 @app.get("/")
 def entry_point():
-    time = datetime.now()
+    time = datetime.now().strftime("%d-%m-%Y")
     return JSONResponse(
         status_code=200,
         content={
             "status": "working...",
-            "time": time.strftime("%d-%m-%Y"),
-            "andhara_version": "0.0.3",
+            "time": time,
+            "version": Config.VERSION,
+            "author": Config.AUTHOR,
         },
     )
