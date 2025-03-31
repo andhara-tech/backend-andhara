@@ -1,92 +1,82 @@
-# Proyecto Nombre
+# Project Name
 
-![Estado del proyecto](https://img.shields.io/badge/status-activo-brightgreen)
-![Última versión](https://img.shields.io/github/v/release/andhara-tech/backend-andhara)
+![Project Status](https://img.shields.io/badge/status-active-brightgreen)
+![Latest Version](https://img.shields.io/github/v/release/andhara-tech/backend-andhara)
 
-## 📌 Índice
+## 📌 Table of Contents
 
-- [Descripción](#-descripción)
-- [Características](#-características)
-- [Instalación](#-instalación)
-- [Uso](#-uso)
-- [Pruebas](#-pruebas)
-- [Documentación](#-documentación)
-- [Contribución](#-contribución)
-- [Contribuidores](#-contribuidores)
-- [Licencia](#-licencia)
-- [Última Modificación](#-última-modificación)
-- [Contacto](#-contacto)
+- [Description](#-description)
+- [Features](#-features)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Documentation](#-documentation)
+- [Contribution](#-contribution)
+- [Contributors](#-contributors)
+- [License](#-license)
+- [Last Modification](#-last-modification)
+- [Contact](#-contact)
 
-## 📌 Descripción
+## 📌 Description
 
-Breve descripción del proyecto, su propósito y el problema que resuelve.
+This project is aim to make a API REST to be connected with the client and make a project for managing the core logic for ANDHARA
 
-## 🚀 Características
+## 🚀 Features
 
-- 🛠️ Funcionalidad clave 1
-- 🔧 Funcionalidad clave 2
-- ⚡ Funcionalidad clave 3
+- 🛠️ Key feature 1
+- 🔧 Key feature 2
+- ⚡ Key feature 3
 
-## 📦 Instalación
+## 📦 Installation
 
-### Requisitos previos
+### Prerequisites
 
-- 🖥️ Dependencia 1
-- 💾 Dependencia 2
-- 🌐 Dependencia 3
-
-```sh
-# Clonar el repositorio
-git clone https://github.com/usuario/repositorio.git
-
-# Ingresar al directorio
-cd repositorio
-
-# Instalar dependencias
-npm install  # O comando equivalente
-```
-
-## ▶️ Uso
+- 🖥️ Dependency 1
+- 💾 Dependency 2
+- 🌐 Dependency 3
 
 ```sh
-npm start  # O comando de inicio del proyecto
+# Clone the repository
+git clone https://github.com/andhara-tech/backend-andhara.git
+
+# Enter the directory
+cd backend-andhara
+
+# Install dependencies
+uv sync
 ```
 
-## 🧪 Pruebas
+## ▶️ Usage
 
 ```sh
-npm test  # O comando de pruebas
+uv run fastapi
 ```
 
-## 📜 Documentación
+## 📜 Documentation
 
-Para más detalles, consulta la [documentación](./docs/README.md).
+For more details, check the [documentation](./docs/README.md).
 
-## 🤝 Contribución
+## 🤝 Contribution
 
-1. Haz un fork del repositorio
-2. Crea una rama con tu funcionalidad: `git checkout -b feature/nueva-feature`
-3. Realiza tus cambios y haz commit: `git commit -m 'Agregada nueva feature'`
-4. Sube los cambios: `git push origin feature/nueva-feature`
-5. Abre un Pull Request
+1. Fork the repository
+2. Create a branch for your feature: `git checkout -b feature/new-feature`
+3. Make your changes and commit: `git commit -m 'Added new feature'`
+4. Push your changes: `git push origin feature/new-feature`
+5. Open a Pull Request
 
-## 👥 Contribuidores
+## 👥 Contributors
 
-Personas que han contribuido a este proyecto:
+People who have contributed to this project:
 
 <a href="https://github.com/andhara-tech/backend-andhara/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=andhara-tech/backend-andhara" />
 </a>
 
-## 📄 Licencia
+## 📄 License
 
-Este proyecto está bajo la licencia [Nombre de la licencia](./LICENSE).
+This project is under the [License Name](./LICENSE) license.
 
-## 📅 Última Modificación
+## 📅 Last Modification
 
-Este archivo fue actualizado por última vez el: `dd/mm/yyyy`
+---
 
-## 📞 Contacto
-
-- 📧 Email: correo@ejemplo.com
-- 🌐 Sitio Web: [ejemplo.com](https://ejemplo.com)
+_This file was last updated on: `31/03/2025`_
