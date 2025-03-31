@@ -116,9 +116,7 @@ People who have contributed to this project:
 
 ## 📄 License
 
-This project is under the [License Name](./LICENSE) license.
-
-## 📅 Last Modification
+This project is under the [Apache License 2.0](./LICENSE) license.
 
 ---
 
