@@ -1,0 +1,14 @@
+[project]
+name = "backend-andhara"
+version = "0.0.1"
+description = "This is the backend-andhara for migrate and do the main features of the bussines"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.115.11",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.10",
+]
