@@ -1,7 +1,7 @@
 # Proyecto Nombre
 
 ![Estado del proyecto](https://img.shields.io/badge/status-activo-brightgreen)
-![Última versión](https://img.shields.io/github/v/release/AND3SIL4/backend-andhara)
+![Última versión](https://img.shields.io/github/v/release/andhara-tech/backend-andhara)
 
 ## 📌 Índice
 
@@ -74,8 +74,8 @@ Para más detalles, consulta la [documentación](./docs/README.md).
 
 Personas que han contribuido a este proyecto:
 
-<a href="https://github.com/AND3SIL4/easy-api/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=AND3SIL4/easy-api" />
+<a href="https://github.com/andhara-tech/backend-andhara/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=andhara-tech/backend-andhara" />
 </a>
 
 ## 📄 Licencia
