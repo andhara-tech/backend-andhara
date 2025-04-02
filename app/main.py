@@ -17,7 +17,7 @@ def entry_point():
         content={
             "status": "working...",
             "time": time,
-            "version": settings.VERSION,
-            "author": settings.AUTHOR,
+            "version": settings.project_version,
+            "author": settings.project_author,
         },
     )
