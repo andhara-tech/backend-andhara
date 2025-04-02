@@ -1,16 +1,18 @@
 # This file manage the main configuration for the project
 # Environment variables and more...
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from pydantic_settings import BaseSettings
 
 
-class Settings:
-    VERSION = os.getenv("VERSION")
-    AUTHOR = os.getenv("AUTHOR")
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+class Settings(BaseSettings):
+    app_name: str = "Andhara Backend"
+    project_version: str
+    project_author: str
+    supabase_url: str
+    supabase_key: str
+
+    class Config:
+        env_file = ".env"
 
 
 settings = Settings()
+print(settings)

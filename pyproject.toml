@@ -6,7 +6,8 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.115.11",
-    "python-dotenv>=1.0.1",
+    "pydantic-settings>=2.8.1",
+    "pytest>=8.3.5",
     "supabase>=2.15.0",
 ]
 
