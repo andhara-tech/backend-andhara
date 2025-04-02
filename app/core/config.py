@@ -6,8 +6,11 @@ import os
 load_dotenv()
 
 
-class Config:
+class Settings:
     VERSION = os.getenv("VERSION")
     AUTHOR = os.getenv("AUTHOR")
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+
+settings = Settings()

@@ -3,8 +3,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from app.core.config import Config
-
+from app.core.config import settings
 
 # Init the entry point of the app
 app = FastAPI()
@@ -18,7 +17,7 @@ def entry_point():
         content={
             "status": "working...",
             "time": time,
-            "version": Config.VERSION,
-            "author": Config.AUTHOR,
+            "version": settings.VERSION,
+            "author": settings.AUTHOR,
         },
     )
