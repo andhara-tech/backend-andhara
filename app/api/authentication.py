@@ -5,14 +5,20 @@ from fastapi.responses import JSONResponse
 
 from supabase import Client
 
-from app.persistence.db.connection import get_supabase
+from app.persistence.db.connection import (
+    get_supabase,
+)
 from app.models import authentication
 
 # Instance the router
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
-    responses={404: {"description": "Not found, please contact the admin"}},
+    responses={
+        404: {
+            "description": "Not found, please contact the admin"
+        }
+    },
 )
 
 
@@ -27,15 +33,26 @@ async def signup(
     """
     try:
         response = supabase.auth.sign_up(
-            {"email": user.email, "password": user.password}
+            {
+                "email": user.email,
+                "password": user.password,
+            }
         )
-        user_data: dict = {"id": response.user.id, "email": response.user.email}
+        user_data: dict = {
+            "id": response.user.id,
+            "email": response.user.email,
+        }
         return JSONResponse(
             status_code=201,
-            content={"message": "User created successfully", "user": user_data},
+            content={
+                "message": "User created successfully",
+                "user": user_data,
+            },
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(
+            status_code=400, detail=str(e)
+        )
 
 
 @router.post("/login")
@@ -44,19 +61,25 @@ async def login(
     supabase: Client = Depends(get_supabase),
 ):
     try:
-        response = supabase.auth.sign_in_with_password(
-            {"email": user.email, "password": user.password}
+        response = (
+            supabase.auth.sign_in_with_password(
+                {
+                    "email": user.email,
+                    "password": user.password,
+                }
+            )
         )
-        print(response.user.role)
-
         return JSONResponse(
             status_code=200,
             content={
-                "access_token": response.session.access_token,
-                "token_type": "bearer",
-                "email": response.user.email,
-                "role": response.user.role,
+                "token": response.session.access_token,
+                "user": {
+                    "email": response.user.email,
+                    "role": response.user.role,
+                },
             },
         )
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"{str(e)}")
+        raise HTTPException(
+            status_code=401, detail=f"{str(e)}"
+        )
