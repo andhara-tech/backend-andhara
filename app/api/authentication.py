@@ -47,8 +47,6 @@ async def login(
         response = supabase.auth.sign_in_with_password(
             {"email": user.email, "password": user.password}
         )
-        print(response.user.role)
-
         return JSONResponse(
             status_code=200,
             content={
