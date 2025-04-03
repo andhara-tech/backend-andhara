@@ -1,6 +1,11 @@
 # This file contains the authentication system for the project
-from fastapi import APIRouter, Depends
-from fastapi.exceptions import HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+)
 from fastapi.responses import JSONResponse
 
 from supabase import Client
@@ -82,4 +87,44 @@ async def login(
     except Exception as e:
         raise HTTPException(
             status_code=401, detail=f"{str(e)}"
+        )
+
+
+async def get_current_user(
+    request: Request,
+    supabase: Client = Depends(get_supabase),
+):
+    # Get the header of the request
+    auth_header = request.headers.get(
+        "Authorization"
+    )
+    if not auth_header:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="There is no token gave",
+        )
+    try:
+        # Split to get the token without counting the token type "Bearer"
+        token = (
+            auth_header.split(" ")[1]
+            if " " in auth_header
+            else auth_header
+        )
+
+        # Verify the user in supabase
+        user = supabase.auth.get_user(token)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token user not authenticated",
+            )
+
+        return user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid authentication credentials - {str(e)}",
+            headers={
+                "WWW-Authenticate": "Bearer"
+            },
         )
