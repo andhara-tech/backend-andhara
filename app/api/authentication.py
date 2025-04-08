@@ -1,5 +1,5 @@
 # This file contains the authentication system for the project
-from typing import Any
+from typing import List
 
 from fastapi import (
     APIRouter,
@@ -9,16 +9,18 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import (
-    HTTPBearer,
     HTTPAuthorizationCredentials,
+    HTTPBearer,
 )
-
+from gotrue import User
 from supabase import Client
 
+from app.core.config import settings
+from app.models import authentication
 from app.persistence.db.connection import (
+    get_admin_supabase,
     get_supabase,
 )
-from app.models import authentication
 
 # Instance the router
 router = APIRouter(
@@ -39,7 +41,7 @@ async def verify_user(
     credentials: HTTPAuthorizationCredentials = Depends(
         security
     ),
-) -> Any:
+) -> authentication.UserResponse:
     """
     Verifies the JWT token in the Authorization header.
 
@@ -71,11 +73,15 @@ async def verify_user(
 
 
 # Create a new user
-@router.post("/signup")
-async def signup(
-    user: authentication.BaseUser,
-    supabase: Client = Depends(get_supabase),
-    current_user: Any = Depends(verify_user),
+@router.post("/create-user")
+async def create_user(
+    user: authentication.CreateUser,
+    supabase: Client = Depends(
+        get_admin_supabase
+    ),
+    current_user: authentication.UserResponse = Depends(
+        verify_user
+    ),
 ):
     """
     Register a new user (only for authenticated users).
@@ -86,12 +92,46 @@ async def signup(
        📥 Request Body:
        - `email`: User's email.
        - `password`: Strong password.
+       - `role`: What kind of user it is.
     """
+    # Verify if the current user is and admin user
+    # If current user is not an admin user the system will raise an error
+    email_current_user: str = (
+        current_user.user.email
+    )
+    is_allowed_user: bool = (
+        email_current_user == settings.email_admin
+    )
+    if not is_allowed_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"User '{
+                email_current_user
+            }' is not allowed to create new users, please contact the admin",
+        )
+    # Validate if the user exist
+    # List all the users
+    user_list: List[User] = (
+        supabase.auth.admin.list_users()
+    )
+    # Extract only the emails from the current users
+    email_list: List[str] = [
+        user.email for user in user_list
+    ]
+    if user.email in email_list:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"It looks like '{
+                user.email
+            }' is already registered. Try logging in?",
+        )
     try:
-        response = supabase.auth.sign_up(
+        response = supabase.auth.admin.create_user(
             {
                 "email": user.email,
                 "password": user.password,
+                "email_confirm": True,  # Auto confirm the email
+                "role": user.role,
             }
         )
         user_data: dict = {
@@ -99,7 +139,7 @@ async def signup(
             "email": response.user.email,
         }
         return JSONResponse(
-            status_code=201,
+            status_code=status.HTTP_201_CREATED,
             content={
                 "message": "User created successfully",
                 "user": user_data,
