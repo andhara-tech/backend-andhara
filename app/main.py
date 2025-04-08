@@ -9,7 +9,7 @@ from app.api import authentication, product
 
 # Init the entry point of the app
 app = FastAPI(
-    title="ANDHARA BACKEND FOR MANAGE THE SYSTEM"
+    title="ANDHARA BACKEND FOR MANAGEMENT"
 )
 
 # Config the cors
