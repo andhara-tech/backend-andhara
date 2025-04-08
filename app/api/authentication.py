@@ -1,5 +1,6 @@
 # This file contains the authentication system for the project
 from typing import List
+from uuid import UUID
 
 from fastapi import (
     APIRouter,
@@ -8,24 +9,27 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
 from gotrue import User
 from supabase import Client
 
-from app.core.config import settings
-from app.models import authentication
+from app.models.authentication import (
+    UserResponse,
+    BaseUser,
+    CreateUser,
+)
 from app.persistence.db.connection import (
     get_admin_supabase,
     get_supabase,
+)
+from app.services.authentication import (
+    is_allowed_user,
+    verify_user,
 )
 
 # Instance the router
 router = APIRouter(
     prefix="/auth",
-    tags=["auth"],
+    tags=["Authentication"],
     responses={
         404: {
             "description": "Not found, please contact the admin"
@@ -33,84 +37,54 @@ router = APIRouter(
     },
 )
 
-security = HTTPBearer()
-
-
-async def verify_user(
-    supabase: Client = Depends(get_supabase),
-    credentials: HTTPAuthorizationCredentials = Depends(
-        security
-    ),
-) -> authentication.UserResponse:
-    """
-    Verifies the JWT token in the Authorization header.
-
-    - Checks if the token is valid using Supabase Auth.
-    - Returns the authenticated user.
-    - Raises `HTTP 401` if invalid.
-    """
-    # Get the Authorization header
-    token = credentials.credentials
-
-    try:
-        # Verify the user in supabase
-        user = supabase.auth.get_user(token)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token user not authenticated",
-            )
-
-        return user
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid authentication credentials - {str(e)}",
-            headers={
-                "WWW-Authenticate": "Bearer"
-            },
-        )
-
 
 # Create a new user
 @router.post("/create-user")
 async def create_user(
-    user: authentication.CreateUser,
+    user: CreateUser,
     supabase: Client = Depends(
         get_admin_supabase
     ),
-    current_user: authentication.UserResponse = Depends(
+    current_user: UserResponse = Depends(
         verify_user
     ),
 ):
     """
-    Register a new user (only for authenticated users).
+    Register a new user (Admin Only)
 
-       🔒 Requires:
-       - `Authorization: Bearer <token>` header.
+    Creates a new user in the Supabase authentication system.
+    This action is **restricted to admin users only**.
 
-       📥 Request Body:
-       - `email`: User's email.
-       - `password`: Strong password.
-       - `role`: What kind of user it is.
+    **Requires:**
+    - `Bearer token` of an authenticated and authorized user.
+
+    **Request Body:**
+    - `email`: Email of the user to create.
+    - `password`: Strong password for the account.
+    - `role`: Role to assign to the new user (`admin`, `<usuario-sede>`, etc.).
+
+    **Returns:**
+    - 201 Created: When the user is successfully created.
+    - JSON with user ID and email.
+
+    **Raises:**
+    - 401 Unauthorized: If the current user is not allowed to create users.
+    - 409 Conflict: If the email is already registered.
+    - 400 Bad Request: For other creation errors.
     """
     # Verify if the current user is and admin user
     # If current user is not an admin user the system will raise an error
-    email_current_user: str = (
+    if not is_allowed_user(
         current_user.user.email
-    )
-    is_allowed_user: bool = (
-        email_current_user == settings.email_admin
-    )
-    if not is_allowed_user:
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"User '{
-                email_current_user
+                current_user.user.email
             }' is not allowed to create new users, please contact the admin",
         )
-    # Validate if the user exist
-    # List all the users
+    # Validate if the user exist previously
+    # List all the existing users
     user_list: List[User] = (
         supabase.auth.admin.list_users()
     )
@@ -155,15 +129,24 @@ async def create_user(
 # Login exiting users
 @router.post("/login")
 async def login(
-    user: authentication.BaseUser,
+    user: BaseUser,
     supabase: Client = Depends(get_supabase),
 ):
     """
-    Login for existing users
+    Authenticate a user and return an access token.
 
-       📥 Request Body:
-       - `email`: User's email.
-       - `password`: Strong password.
+    This endpoint allows a user to log in using their email and password.
+    If the credentials are valid, a JWT access token and basic user info
+    are returned.
+
+    - `email`: The user's email.
+    - `password`: The user's password.
+
+    **Returns:**
+        200 OK with the access token and user info (email, role, user_id).
+
+    **Raises:**
+        401 Unauthorized: If the credentials are invalid or login fails.
     """
     try:
         response = (
@@ -181,6 +164,7 @@ async def login(
                 "user": {
                     "email": response.user.email,
                     "role": response.user.role,
+                    "user_id": response.user.id,
                 },
             },
         )
@@ -188,4 +172,57 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Loing failed - {str(e)}",
+        )
+
+
+@router.delete("/delete-user")
+def delete_user(
+    user_id: UUID,
+    admin_supabase: Client = Depends(
+        get_admin_supabase
+    ),
+    current_user: UserResponse = Depends(
+        verify_user
+    ),
+):
+    """
+    Delete a user from Supabase.
+
+    This endpoint allows an admin user to delete an existing user
+    from the Supabase authentication system using the user's UUID.
+
+     - `user_id`: UUID of the user to delete (passed as a query parameter).
+
+    **Returns:**
+        200 OK with a success message if deletion is successful.
+
+    **Raises:**
+        401 Unauthorized: If the current user does not have permission.
+        400 Bad Request: If there is an error deleting the user.
+    """
+    # Verify if the user is allowed
+    if not is_allowed_user(
+        current_user.user.email
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"User '{
+                current_user.user.email
+            }' is not allowed to create new users, please contact the admin",
+        )
+
+    try:
+        admin_supabase.auth.admin.delete_user(
+            user_id
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": f"User '{user_id}' has been deleted successfully",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error deleting user wiht id '{user_id}' - {str(e)}",
         )
