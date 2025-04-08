@@ -3,6 +3,9 @@
 from app.core.config import settings
 
 from supabase import create_client, Client
+from supabase.lib.client_options import (
+    ClientOptions,
+)
 
 
 class SupabaseClient:
@@ -20,3 +23,24 @@ class SupabaseClient:
 
 def get_supabase() -> Client:
     return SupabaseClient.get_client()
+
+
+class AdminSupabaseClient:
+    _instance: Client = None
+
+    @classmethod
+    def get_admin_client(cls) -> Client:
+        if cls._instance is None:
+            cls._instance = create_client(
+                settings.supabase_url,
+                settings.supabase_role_key,
+                options=ClientOptions(
+                    auto_refresh_token=False,
+                    persist_session=False,
+                ),
+            )
+        return cls._instance
+
+
+def get_admin_supabase() -> Client:
+    return AdminSupabaseClient.get_admin_client()

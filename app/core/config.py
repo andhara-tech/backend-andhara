@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     project_author: str
     supabase_url: str
     supabase_key: str
+    supabase_role_key: str
+    allowed_cors: str
+    email_admin: str
 
     class Config:
         env_file = ".env"
