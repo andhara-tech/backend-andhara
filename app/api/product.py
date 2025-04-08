@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.authentication import (
-    get_current_user,
+    verify_user,
 )
 from app.models.authentication import BaseUser
 
@@ -19,6 +19,6 @@ router = APIRouter(
 
 @router.get("/product")
 def test_product(
-    user: BaseUser = Depends(get_current_user),
+    user: BaseUser = Depends(verify_user),
 ):
     return {"message": "Exito"}
