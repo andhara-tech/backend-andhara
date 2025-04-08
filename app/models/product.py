@@ -1,6 +1,4 @@
 # This file contains the models for products into db
-from typing import Optional
-
 from pydantic import BaseModel
 
 
