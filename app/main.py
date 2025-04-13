@@ -5,7 +5,11 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import authentication, product
+from app.api import (
+    authentication,
+    product,
+    customer,
+)
 
 # Init the entry point of the app
 app = FastAPI(
@@ -25,8 +29,8 @@ app.add_middleware(
 app.include_router(
     authentication.router, prefix="/v1"
 )
-
 app.include_router(product.router, prefix="/v1")
+app.include_router(customer.router, prefix="/v1")
 
 
 @app.get("/")
