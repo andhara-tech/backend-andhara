@@ -1,6 +1,7 @@
 # This file contains the main logic of repository of products
 # It is responsible for interacting with the database and performing CRUD operations
 from typing import List, Optional
+from app.utils.transformers import transform_keys, transform_keys_reverse
 
 from app.models.product import (
     CreateProduct,
@@ -11,6 +12,18 @@ from app.persistence.db.connection import (
     get_supabase,
 )
 
+product_field_map = {
+    "id_producto": "product_id",
+    "id_proveedor": "supplier_id",
+    "nombre_producto": "product_name",
+    "descripcion_producto": "product_description",
+    "precio_compra": "purchase_price",
+    "descuento_producto": "product_discount",
+    "precio_venta": "sale_price",
+    "margen_ganancia": "profit_margin",
+    "iva": "vat",
+} # Check where this data will be managed
+
 class ProductRepository:
     def __init__(self):
         self.supabase = get_supabase()
@@ -19,15 +32,16 @@ class ProductRepository:
     async def create(
         self, new_product: CreateProduct, margen_ganancia: float
     ) -> Product:
-        data = new_product.model_dump()
+        data = transform_keys_reverse(new_product.model_dump(), product_field_map)
         # Add the profit margin to the data
         data["margen_ganancia"] = margen_ganancia
+        
         response = (
             self.supabase.table(self.table)
             .insert(data)
             .execute()
         )
-        return Product(**response.data[0])
+        return Product(**transform_keys(response.data[0], product_field_map))
 
     async def get_by_id(
         self, id_product: int
@@ -42,7 +56,7 @@ class ProductRepository:
             .execute()
         )
         if response.data:
-            return Product(**response.data[0])
+            return Product(**transform_keys(response.data[0], product_field_map))
         return None
 
     async def list_all_products(
@@ -54,9 +68,9 @@ class ProductRepository:
             .range(skip, skip + limit)
             .execute()
         )
+
         return [
-            Product(**item)
-            for item in response.data
+            Product(**transform_keys(row, product_field_map)) for row in response.data
         ]
 
     async def update(
@@ -64,11 +78,8 @@ class ProductRepository:
         id_product: int,
         product: ProductUpdate,
     ) -> Optional[Product]:
-        data = product.model_dump(
-            exclude_unset=True,
-            exclude_defaults=True
-        )
-        
+        data = transform_keys_reverse(product.model_dump(exclude_unset=True), product_field_map)
+
         if not data:
             return None
 
@@ -82,7 +93,7 @@ class ProductRepository:
             .execute()
         )
         if response.data:
-            return Product(**response.data[0])
+            return Product(**transform_keys(response.data[0], product_field_map))
         return None
 
 

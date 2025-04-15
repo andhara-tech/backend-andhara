@@ -21,8 +21,8 @@ class ProductService:
     ) -> Product:
         # Calculate the profit margin
         margen_ganancia = calculate_profit_margin(
-            product.precio_compra,
-            product.precio_venta
+            product.purchase_price,
+            product.sale_price
         )
         return await self.repository.create(
             product, margen_ganancia
@@ -49,13 +49,13 @@ class ProductService:
         id_product: int,
         product: ProductUpdate,
     ) -> Optional[Product]:
-        if product.margen_ganancia is None:
+        if product.profit_margin is None:
             # Calculate the profit margin if not provided
             margen_ganancia = calculate_profit_margin(
-                product.precio_compra,
-                product.precio_venta
+                product.purchase_price,
+                product.sale_price
             )
-            product.margen_ganancia = margen_ganancia
+            product.profit_margin = margen_ganancia
         return await self.repository.update(
             id_product, product
         )
