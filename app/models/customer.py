@@ -4,13 +4,13 @@ from typing import Optional
 
 
 class BaseClient(BaseModel):
-    documento_cliente: str
-    id_tipo_documento: int
-    nombres_cliente: str
-    apellidos_cliente: str
-    numero_telefono: str
-    correo_electronico: EmailStr
-    direccion_residencia: str
+    customer_document: str
+    document_type_id: int
+    first_name: str
+    last_name: str
+    phone_number: str
+    email: EmailStr
+    home_address: str
 
 
 class CreateClient(BaseClient):
@@ -18,13 +18,13 @@ class CreateClient(BaseClient):
 
 
 class ClientUpdate(BaseModel):
-    documento_cliente: Optional[str] = None
-    id_tipo_documento: Optional[int] = None
-    nombres_cliente: Optional[str] = None
-    apellidos_cliente: Optional[str] = None
-    numero_telefono: Optional[str] = None
-    correo_electronico: Optional[EmailStr] = None
-    direccion_residencia: Optional[str] = None
+    customer_document: Optional[str] = None
+    document_type_id: Optional[int] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[EmailStr] = None
+    home_address: Optional[str] = None
 
 
 class Customer(BaseClient):
