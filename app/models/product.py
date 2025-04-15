@@ -2,35 +2,38 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class ProductBase(BaseModel):
-    id_producto: int
-    id_proveedor: int
-    nombre_producto: str
-    descripcion_producto: str
-    precio_compra: float
-    descuento_producto: float
-    precio_venta: float
-    margen_ganancia: float
-    iva: float
+    product_id: int
+    supplier_id: int
+    product_name: str
+    product_description: str
+    purchase_price: float
+    product_discount: float
+    sale_price: float
+    profit_margin: float
+    vat: float
+
 
 class CreateProduct(BaseModel):
-    id_proveedor: int
-    nombre_producto: str
-    descripcion_producto: str
-    precio_compra: float
-    descuento_producto: Optional[float]= 0.0
-    precio_venta: float
-    iva: float = 19.0
+    supplier_id: int
+    product_name: str
+    product_description: str
+    purchase_price: float
+    product_discount: Optional[float] = 0.0
+    sale_price: float
+    vat: float = 19.0
+
 
 class ProductUpdate(BaseModel):
-    id_proveedor: Optional[int]= None
-    nombre_producto: Optional[str]= None
-    descripcion_producto: Optional[str]= None
-    precio_compra: Optional[float]= None
-    precio_venta: Optional[float]= None
-    descuento_producto: Optional[float]= None
-    margen_ganancia: Optional[float]= None
-    iva: Optional[float]= None
+    supplier_id: Optional[int] = None
+    product_name: Optional[str] = None
+    product_description: Optional[str] = None
+    purchase_price: Optional[float] = None
+    sale_price: Optional[float] = None
+    product_discount: Optional[float] = None
+    profit_margin: Optional[float] = None
+    vat: Optional[float] = None
 
 
 class Product(ProductBase):
