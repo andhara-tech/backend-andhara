@@ -180,11 +180,11 @@ async def update_product(
         validate_product_data(product)
         # Validate that the product name and description are not empty strings
         validate_empty_str(
-            product.nombre_producto,
+            product.product_name,
             field_name="Product name"
         )
         validate_empty_str(
-            product.descripcion_producto,
+            product.product_description,
             field_name="Product description"
         )
         # update the product

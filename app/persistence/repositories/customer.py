@@ -1,5 +1,6 @@
 # This file contains the main logic of repository of customers
 from typing import List, Optional
+from app.utils.transformers import transform_keys, transform_keys_reverse
 
 from app.models.customer import (
     CreateClient,
@@ -10,6 +11,15 @@ from app.persistence.db.connection import (
     get_supabase,
 )
 
+client_field_map = {
+    "documento_cliente": "customer_document",
+    "id_tipo_documento": "document_type_id",
+    "nombres_cliente": "first_name",
+    "apellidos_cliente": "last_name",
+    "numero_telefono": "phone_number",
+    "correo_electronico": "email",
+    "direccion_residencia": "home_address",
+} # Check where this data will be managed
 
 class CustomerRepository:
     def __init__(self):
@@ -17,15 +27,15 @@ class CustomerRepository:
         self.table = "cliente"
 
     async def create(
-        self, customer: CreateClient
+        self, new_customer: CreateClient
     ) -> Customer:
-        data = customer.model_dump()
+        data = transform_keys_reverse(new_customer.model_dump(), client_field_map)
         response = (
             self.supabase.table(self.table)
             .insert(data)
             .execute()
         )
-        return Customer(**response.data[0])
+        return Customer(**transform_keys(response.data[0], client_field_map))
 
     async def get_by_document(
         self, customer_document: str
@@ -40,22 +50,8 @@ class CustomerRepository:
             .execute()
         )
         if response.data:
-            return Customer(**response.data[0])
+            return Customer(**transform_keys(response.data[0], client_field_map))
         return None
-
-    async def delete_customer(
-        self, customer_document: str
-    ) -> bool:
-        response = (
-            self.supabase.table(self.table)
-            .delete()
-            .eq(
-                "documento_cliente",
-                customer_document,
-            )
-            .execute()
-        )
-        return len(response.data) > 0
 
     async def list_all_customers(
         self, skip: int = 0, limit: int = 100
@@ -67,8 +63,7 @@ class CustomerRepository:
             .execute()
         )
         return [
-            Customer(**item)
-            for item in response.data
+            Customer(**transform_keys(row, client_field_map))for row in response.data
         ]
 
     async def update(
@@ -76,8 +71,11 @@ class CustomerRepository:
         customer_document: str,
         customer: ClientUpdate,
     ) -> Optional[Customer]:
-        data = customer.model_dump(
-            exclude_unset=True
+        data = transform_keys_reverse(
+            customer.model_dump(
+                exclude_unset=True,
+            ),
+            client_field_map
         )
         if not data:
             return None
@@ -92,5 +90,19 @@ class CustomerRepository:
             .execute()
         )
         if response.data:
-            return Customer(**response.data[0])
+            return Customer(**transform_keys(response.data[0], client_field_map))
         return None
+    
+    async def delete_customer(
+        self, customer_document: str
+    ) -> bool:
+        response = (
+            self.supabase.table(self.table)
+            .delete()
+            .eq(
+                "documento_cliente",
+                customer_document,
+            )
+            .execute()
+        )
+        return len(response.data) > 0
