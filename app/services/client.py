@@ -20,7 +20,7 @@ class CustomerService:
         # Verify if the customer already exists
         existing_customer = (
             await self.repository.get_by_document(
-                customer.documento_cliente
+                customer.customer_document
             )
         )
         if existing_customer:

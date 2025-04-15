@@ -78,7 +78,11 @@ class ProductRepository:
         id_product: int,
         product: ProductUpdate,
     ) -> Optional[Product]:
-        data = transform_keys_reverse(product.model_dump(exclude_unset=True), product_field_map)
+        data = transform_keys_reverse(
+            product.model_dump(
+                exclude_unset=True
+            ),
+            product_field_map)
 
         if not data:
             return None
