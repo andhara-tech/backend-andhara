@@ -13,15 +13,16 @@ from gotrue import User
 from supabase import Client
 
 from app.models.authentication import (
-    UserResponse,
     BaseUser,
     CreateUser,
+    UserResponse,
 )
 from app.persistence.db.connection import (
     get_admin_supabase,
     get_supabase,
 )
 from app.services.authentication import (
+    AuthenticationService,
     is_allowed_user,
     verify_user,
 )
@@ -37,8 +38,12 @@ router = APIRouter(
     },
 )
 
+# Instance the service class using the singleton pattern
+service = AuthenticationService()
 
 # Create a new user
+
+
 @router.post("/create-user")
 async def create_user(
     user: CreateUser,
@@ -225,4 +230,47 @@ def delete_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error deleting user wiht id '{user_id}' - {str(e)}",
+        )
+
+
+@router.get(
+    "/users",
+    status_code=status.HTTP_200_OK,
+    response_model=List[User],
+)
+async def list_all_users(
+    current_user: User = Depends(verify_user),
+):
+    """
+    List all users from Supabase.
+
+    This endpoint allows an admin user to retrieve a list of all users
+    registered in the Supabase authentication system.
+
+    - `current_user`: Currently authenticated user (injected via dependency).
+
+    **Returns:**
+        200 OK with a list of all users if the request is successful.
+
+    **Raises:**
+        401 Unauthorized: If the current user does not have admin permissions.
+        400 Bad Request: If there is an error retrieving the user list.
+    """
+    try:
+        # Verify if the current user is and admin user
+        # If current user is not an admin user the system will raise an error
+        if not is_allowed_user(
+            current_user.user.email
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User '{
+                    current_user.user.email
+                }' not allowed to create list users, please contact the admin",
+            )
+        return await service.list_all_users()
+    except Exception as e:
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
         )

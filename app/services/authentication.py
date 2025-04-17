@@ -13,6 +13,9 @@ from app.models.authentication import UserResponse
 from app.persistence.db.connection import (
     get_supabase,
 )
+from app.persistence.repositories.authentication import (
+    AuthenticationRepository,
+)
 
 security = HTTPBearer()
 
@@ -60,4 +63,16 @@ async def verify_user(
             headers={
                 "WWW-Authenticate": "Bearer"
             },
+        )
+
+
+class AuthenticationService:
+    def __init__(self):
+        self.repository = (
+            AuthenticationRepository()
+        )
+
+    async def list_all_users(self):
+        return (
+            await self.repository.list_all_users()
         )
