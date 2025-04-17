@@ -5,9 +5,9 @@ from typing import Optional
 
 class BaseClient(BaseModel):
     customer_document: str
-    document_type_id: int
-    first_name: str
-    last_name: str
+    document_type: str
+    customer_first_name: str
+    customer_last_name: str
     phone_number: str
     email: EmailStr
     home_address: str
@@ -19,9 +19,9 @@ class CreateClient(BaseClient):
 
 class ClientUpdate(BaseModel):
     customer_document: Optional[str] = None
-    document_type_id: Optional[int] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    document_type: Optional[str] = None
+    customer_first_name: Optional[str] = None
+    customer_last_name: Optional[str] = None
     phone_number: Optional[str] = None
     email: Optional[EmailStr] = None
     home_address: Optional[str] = None

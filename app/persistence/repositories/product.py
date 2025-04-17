@@ -1,5 +1,5 @@
 # This file contains the main logic of repository of products
-# It is responsible for interacting with the database and performing CRUD operations
+# It is responsible for interacting with the database and performing CRUD
 from typing import List, Optional
 
 from app.models.product import (
@@ -11,13 +11,16 @@ from app.persistence.db.connection import (
     get_supabase,
 )
 
+
 class ProductRepository:
     def __init__(self):
         self.supabase = get_supabase()
-        self.table = "producto"
+        self.table = "product"
 
     async def create(
-        self, new_product: CreateProduct, margen_ganancia: float
+        self,
+        new_product: CreateProduct,
+        margen_ganancia: float,
     ) -> Product:
         data = new_product.model_dump()
         # Add the profit margin to the data
@@ -36,7 +39,7 @@ class ProductRepository:
             self.supabase.table(self.table)
             .select("*")
             .eq(
-                "id_producto",
+                "id_product",
                 id_product,
             )
             .execute()
@@ -66,9 +69,9 @@ class ProductRepository:
     ) -> Optional[Product]:
         data = product.model_dump(
             exclude_unset=True,
-            exclude_defaults=True
+            exclude_defaults=True,
         )
-        
+
         if not data:
             return None
 
@@ -76,7 +79,7 @@ class ProductRepository:
             self.supabase.table(self.table)
             .update(data)
             .eq(
-                "id_producto",
+                "id_product",
                 id_product,
             )
             .execute()
@@ -85,15 +88,14 @@ class ProductRepository:
             return Product(**response.data[0])
         return None
 
-
-    async def delete_product(
+    async def inactivate_product(
         self, id_product: int
     ) -> bool:
         response = (
             self.supabase.table(self.table)
-            .delete()
+            .update({"product_state": False})
             .eq(
-                "id_producto",
+                "id_product",
                 id_product,
             )
             .execute()

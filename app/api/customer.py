@@ -10,7 +10,7 @@ from app.models.customer import (
     CreateClient,
     Customer,
 )
-from app.services.client import CustomerService
+from app.services.customer import CustomerService
 
 # Instace the main router
 router = APIRouter()
@@ -109,37 +109,40 @@ async def get_customer_by_document(
         )
 
 
-@router.delete(
-    "/delete-customer/{document}",
+@router.post(
+    "/inactivate/{document}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_customer(
+async def inactivate_customer(
     document: str,
     current_user: UserResponse = Depends(
         verify_user
     ),
 ):
     """
-    Deletes a customer by document.
+    Inactivate a customer by document.
 
     This endpoint allows the deletion of a customer from the system
     using their document number. It requires the user to be authenticated
     and authorized.
 
     **Args**:
-    - document (str): The document number of the customer to delete.
+    - document (str): The document number of the customer to inactivate.
 
     **Returns:**
     - None
 
     **Raises:**
     - HTTPException:
-    - `404 Not Found` if the customer could not be found or deleted.
+    - `404 Not Found` if the customer could not be found or inactivate.
     """
     try:
-        if not await service.delete_customer(
-            document
-        ):
+        response = (
+            await service.inactivate_customer(
+                document
+            )
+        )
+        if not response:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Error deleting the current customer",

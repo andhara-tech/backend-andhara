@@ -8,11 +8,14 @@ from app.api.authentication import verify_user
 from app.models.authentication import UserResponse
 from app.models.product import (
     CreateProduct,
-    Product, 
-    ProductUpdate
+    Product,
+    ProductUpdate,
 )
 from app.services.product import ProductService
-from app.utils.products import validate_empty_str, validate_product_data
+from app.utils.products import (
+    validate_empty_str,
+    validate_product_data,
+)
 
 # Instace the main router
 router = APIRouter()
@@ -32,10 +35,11 @@ router = APIRouter(
 # Singleton pattern
 service = ProductService()
 
+
 @router.post(
     "/create-product",
-    response_model = Product,
-    status_code = status.HTTP_201_CREATED,
+    response_model=Product,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_product(
     product: CreateProduct,
@@ -51,7 +55,7 @@ async def create_product(
     - The numeric values within the product data must be positive.
     - The profit margin is calculated based on the purchase and sale prices.
 
-    **Args**: 
+    **Args**:
     - product (CreateProduct): The data of the product to create.
 
     **Return:** The newly created product represented with the response model.
@@ -70,6 +74,7 @@ async def create_product(
             detail=str(e),
         )
 
+
 @router.get(
     "/by-id/{id_product}",
     response_model=Product,
@@ -83,7 +88,7 @@ async def get_product_by_id(
     """
     Retrieves a product by id.
 
-    This endpoint allows fetching a product's information using its ID number.     
+    This endpoint allows fetching a product's information using its ID number.
     User authentication and authorization are required.
 
     **Args**:
@@ -112,9 +117,9 @@ async def get_product_by_id(
             detail=str(e),
         )
 
+
 @router.get(
-    "/products", 
-    response_model=List[Product]
+    "/products", response_model=List[Product]
 )
 async def list_products(
     skip: int = 0,
@@ -181,11 +186,11 @@ async def update_product(
         # Validate that the product name and description are not empty strings
         validate_empty_str(
             product.nombre_producto,
-            field_name="Product name"
+            field_name="Product name",
         )
         validate_empty_str(
             product.descripcion_producto,
-            field_name="Product description"
+            field_name="Product description",
         )
         # update the product
         updated_product = (
@@ -205,44 +210,46 @@ async def update_product(
             detail=str(e),
         )
 
-@router.delete(
-    "/delete-product/{id_producto}",
+
+@router.post(
+    "/inactivate/{id_product}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_product(
-    id_producto: int,
+async def inactivate_product(
+    id_product: int,
     current_user: UserResponse = Depends(
         verify_user
     ),
 ):
     """
-    Deletes a product by ID.
+    Inactivate a product by ID.
 
     This endpoint allows the deletion of a product from the system
     using its ID number. It requires the user to be authenticated
     and authorized.
 
     **Args**:
-    - id_producto (int): The ID of the product to delete.
+    - id_product (int): The ID of the product to inactivate.
 
     **Returns:**
     - None
 
     **Raises:**
     - HTTPException:
-    - `404 Not Found` if the product could not be found or deleted.
+    - `404 Not Found` if the product could not be found or inactivate.
     """
     try:
-        if not await service.delete_product(
-            id_producto
+        if not await service.inactivate_product(
+            id_product
         ):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Product with id '{id_producto}' not found or could not be deleted",
+                detail=f"Product with id '{
+                    id_product
+                }' not found or could not be inactivate",
             )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-
