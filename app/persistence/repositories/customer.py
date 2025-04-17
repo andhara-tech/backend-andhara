@@ -2,9 +2,9 @@
 from typing import List, Optional
 
 from app.models.customer import (
+    ClientUpdate,
     CreateClient,
     Customer,
-    ClientUpdate,
 )
 from app.persistence.db.connection import (
     get_supabase,
@@ -14,7 +14,7 @@ from app.persistence.db.connection import (
 class CustomerRepository:
     def __init__(self):
         self.supabase = get_supabase()
-        self.table = "cliente"
+        self.table = "customer"
 
     async def create(
         self, customer: CreateClient
@@ -34,7 +34,7 @@ class CustomerRepository:
             self.supabase.table(self.table)
             .select("*")
             .eq(
-                "documento_cliente",
+                "customer_document",
                 customer_document,
             )
             .execute()
@@ -43,14 +43,14 @@ class CustomerRepository:
             return Customer(**response.data[0])
         return None
 
-    async def delete_customer(
+    async def inactivate_customer(
         self, customer_document: str
     ) -> bool:
         response = (
             self.supabase.table(self.table)
-            .delete()
+            .update({"customer_state": False})
             .eq(
-                "documento_cliente",
+                "customer_document",
                 customer_document,
             )
             .execute()
@@ -86,7 +86,7 @@ class CustomerRepository:
             self.supabase.table(self.table)
             .update(data)
             .eq(
-                "documento_cliente",
+                "customer_document",
                 customer_document,
             )
             .execute()

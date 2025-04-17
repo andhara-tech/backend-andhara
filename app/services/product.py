@@ -8,9 +8,12 @@ from app.models.product import (
     ProductUpdate,
 )
 from app.persistence.repositories.product import (
-    ProductRepository
+    ProductRepository,
 )
-from app.utils.products import calculate_profit_margin
+from app.utils.products import (
+    calculate_profit_margin,
+)
+
 
 class ProductService:
     def __init__(self):
@@ -22,7 +25,7 @@ class ProductService:
         # Calculate the profit margin
         margen_ganancia = calculate_profit_margin(
             product.precio_compra,
-            product.precio_venta
+            product.precio_venta,
         )
         return await self.repository.create(
             product, margen_ganancia
@@ -31,10 +34,8 @@ class ProductService:
     async def get_product_by_id(
         self, id_product: int
     ) -> Optional[Product]:
-        return (
-            await self.repository.get_by_id(
-                id_product
-            )
+        return await self.repository.get_by_id(
+            id_product
         )
 
     async def list_all_products(
@@ -51,20 +52,22 @@ class ProductService:
     ) -> Optional[Product]:
         if product.margen_ganancia is None:
             # Calculate the profit margin if not provided
-            margen_ganancia = calculate_profit_margin(
-                product.precio_compra,
-                product.precio_venta
+            margen_ganancia = (
+                calculate_profit_margin(
+                    product.precio_compra,
+                    product.precio_venta,
+                )
             )
-            product.margen_ganancia = margen_ganancia
+            product.margen_ganancia = (
+                margen_ganancia
+            )
         return await self.repository.update(
             id_product, product
         )
 
-    async def delete_product(
+    async def inactivate_product(
         self, id_product: int
     ) -> bool:
-        return (
-            await self.repository.delete_product(
-                id_product
-            )
+        return await self.repository.inactivate_product(
+            id_product
         )

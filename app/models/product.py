@@ -4,8 +4,8 @@ from typing import Optional
 
 
 class ProductBase(BaseModel):
-    product_id: int
-    supplier_id: int
+    id_product: int
+    id_supplier: int
     product_name: str
     product_description: str
     purchase_price: float
@@ -16,7 +16,7 @@ class ProductBase(BaseModel):
 
 
 class CreateProduct(BaseModel):
-    supplier_id: int
+    id_supplier: int
     product_name: str
     product_description: str
     purchase_price: float
@@ -26,7 +26,7 @@ class CreateProduct(BaseModel):
 
 
 class ProductUpdate(BaseModel):
-    supplier_id: Optional[int] = None
+    id_supplier: Optional[int] = None
     product_name: Optional[str] = None
     product_description: Optional[str] = None
     purchase_price: Optional[float] = None
