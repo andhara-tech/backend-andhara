@@ -12,9 +12,13 @@ from app.models.product import (
     ProductUpdate,
 )
 from app.services.product import ProductService
+from app.utils.global_validators import (
+    validate_empty_str, 
+    validate_list
+)
 from app.utils.products import (
-    validate_empty_str,
     validate_product_data,
+    validate_stock_quantity,
 )
 
 # Instace the main router
@@ -54,17 +58,28 @@ async def create_product(
     It requires the user to be authenticated and authorized.
     - The numeric values within the product data must be positive.
     - The profit margin is calculated based on the purchase and sale prices.
+    - The stock should align with the requirements of the BranchStockEntry model.
 
     **Args**:
     - product (CreateProduct): The data of the product to create.
 
-    **Return:** The newly created product represented with the response model.
+    **Return:** (Product): The newly created product represented with the response model.
 
     **Raises:** a `400 Bad Request` is returned.
     """
     try:
-        # Validate that the product data does not contain negative values
+        # Validate that the numeric product data does not contain negative values
         validate_product_data(product)
+        # Validate that the product name and description are not empty strings
+        validate_empty_str(product.product_name, field_name="Nombre del producto")
+        validate_empty_str(product.product_description, field_name="Descripción del producto")
+        # Validate that the stock list is not empty
+        validate_list(product.stock, True, "La lista de stock no puede estar vacía.")
+        # Validate that the quantity value in each stock entry is not negative
+        for stock_entry in product.stock:
+            validate_stock_quantity(stock_entry.quantity)
+        
+        # process the product creation
         return await service.create_product(
             product
         )
@@ -78,9 +93,10 @@ async def create_product(
 @router.get(
     "/by-id/{id_product}",
     response_model=Product,
+    status_code=status.HTTP_200_OK,
 )
 async def get_product_by_id(
-    id_product: int,
+    id_product: str,
     current_user: UserResponse = Depends(
         verify_user
     ),
@@ -92,7 +108,7 @@ async def get_product_by_id(
     User authentication and authorization are required.
 
     **Args**:
-    - id_product (int): The ID of the product to retrieve.
+    - id_product (str): The UUID of the product to retrieve.
 
     **Returns:**
     - Product: The product data, if found.
@@ -119,7 +135,9 @@ async def get_product_by_id(
 
 
 @router.get(
-    "/products", response_model=List[Product]
+    "/products", response_model=List[Product],
+    status_code=status.HTTP_200_OK,
+    
 )
 async def list_products(
     skip: int = 0,
@@ -153,11 +171,12 @@ async def list_products(
 
 
 @router.put(
-    "/update-product",
+    "/update-product/{id_product}",
     response_model=Product,
+    status_code=status.HTTP_200_OK,
 )
 async def update_product(
-    id_product: int,
+    id_product: str,
     product: ProductUpdate,
     current_user=Depends(verify_user),
 ):
@@ -169,12 +188,12 @@ async def update_product(
     authenticated and authorized.
 
     **Args**:
-    - id_product (int): The id of the product to update.
+    - id_product (str): The UUID of the product to update.
     - product (ProductUpdate): The updated data for the product.
     - current_user: The authenticated user, injected via dependency.
 
     **Returns:**
-    - Customer: The updated product data.
+    - (Product): The updated product data.
 
     **Raises:**
     - HTTPException:
@@ -184,14 +203,16 @@ async def update_product(
         # Validate that the product data does not contain negative values
         validate_product_data(product)
         # Validate that the product name and description are not empty strings
-        validate_empty_str(
-            product.nombre_producto,
-            field_name="Product name",
-        )
-        validate_empty_str(
-            product.descripcion_producto,
-            field_name="Product description",
-        )
+        if product.product_name is not None:
+            validate_empty_str(product.product_name, field_name="Nombre del producto")
+        if product.product_description is not None:
+            validate_empty_str(product.product_description, field_name="Descripción del producto")
+        # If the stock list is provided, validate that it is not empty
+        if product.stock is not None:
+            validate_list(product.stock, True, "La lista de stock no puede estar vacía.")
+            # Validate that the quantity value in each stock entry is not negative
+            for stock_entry in product.stock:
+                validate_stock_quantity(stock_entry.quantity)
         # update the product
         updated_product = (
             await service.update_product(
@@ -211,12 +232,13 @@ async def update_product(
         )
 
 
-@router.post(
+@router.patch(
     "/inactivate/{id_product}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=str,
+    status_code=status.HTTP_200_OK,
 )
 async def inactivate_product(
-    id_product: int,
+    id_product: str,
     current_user: UserResponse = Depends(
         verify_user
     ),
@@ -229,10 +251,10 @@ async def inactivate_product(
     and authorized.
 
     **Args**:
-    - id_product (int): The ID of the product to inactivate.
+    - id_product (str): The UUID of the product to inactivate.
 
     **Returns:**
-    - None
+    - Confirmation response message.
 
     **Raises:**
     - HTTPException:
@@ -244,10 +266,10 @@ async def inactivate_product(
         ):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Product with id '{
-                    id_product
-                }' not found or could not be inactivate",
+                detail=f"Product with id '{id_product}' not found or could not be inactivate",
             )
+        else:
+            return f"Product with id '{id_product}' inactivated successfully"
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
