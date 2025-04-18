@@ -3,9 +3,9 @@ from typing import List, Optional
 from app.utils.transformers import transform_keys, transform_keys_reverse
 
 from app.models.customer import (
+    ClientUpdate,
     CreateClient,
     Customer,
-    ClientUpdate,
 )
 from app.persistence.db.connection import (
     get_supabase,
@@ -24,7 +24,7 @@ client_field_map = {
 class CustomerRepository:
     def __init__(self):
         self.supabase = get_supabase()
-        self.table = "cliente"
+        self.table = "customer"
 
     async def create(
         self, new_customer: CreateClient
@@ -44,7 +44,7 @@ class CustomerRepository:
             self.supabase.table(self.table)
             .select("*")
             .eq(
-                "documento_cliente",
+                "customer_document",
                 customer_document,
             )
             .execute()
@@ -53,6 +53,23 @@ class CustomerRepository:
             return Customer(**transform_keys(response.data[0], client_field_map))
         return None
 
+<<<<<<< HEAD
+=======
+    async def inactivate_customer(
+        self, customer_document: str
+    ) -> bool:
+        response = (
+            self.supabase.table(self.table)
+            .update({"customer_state": False})
+            .eq(
+                "customer_document",
+                customer_document,
+            )
+            .execute()
+        )
+        return len(response.data) > 0
+
+>>>>>>> b48f1bd6a4e3a82efaff68c3a916de87c48c2814
     async def list_all_customers(
         self, skip: int = 0, limit: int = 100
     ) -> List[Customer]:
@@ -84,7 +101,7 @@ class CustomerRepository:
             self.supabase.table(self.table)
             .update(data)
             .eq(
-                "documento_cliente",
+                "customer_document",
                 customer_document,
             )
             .execute()

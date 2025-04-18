@@ -1,9 +1,9 @@
 from typing import List, Optional
 
 from app.models.customer import (
+    ClientUpdate,
     CreateClient,
     Customer,
-    ClientUpdate,
 )
 from app.persistence.repositories.customer import (
     CustomerRepository,
@@ -40,13 +40,11 @@ class CustomerService:
             )
         )
 
-    async def delete_customer(
+    async def inactivate_customer(
         self, customer_document: str
     ) -> bool:
-        return (
-            await self.repository.delete_customer(
-                customer_document
-            )
+        return await self.repository.inactivate_customer(
+            customer_document
         )
 
     async def list_all_customers(
