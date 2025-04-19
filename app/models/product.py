@@ -5,8 +5,9 @@ from typing import Optional
 from app.models.branch_stock import (
     BranchStock,
     BranchStockUpdate,
-    ProductStockEntry
+    ProductStockEntry,
 )
+
 
 class ProductBase(BaseModel):
     id_product: str
@@ -29,7 +30,7 @@ class CreateProduct(BaseModel):
     product_discount: Optional[float] = 0.0
     sale_price: float
     vat: float = 19.0
-    product_state: Optional[bool] = True 
+    product_state: Optional[bool] = True
     stock: list[ProductStockEntry]
 
 
@@ -41,12 +42,15 @@ class ProductUpdate(BaseModel):
     sale_price: Optional[float] = None
     product_discount: Optional[float] = None
     profit_margin: Optional[float] = None
-    product_state: Optional[bool] = None 
+    product_state: Optional[bool] = None
     vat: Optional[float] = None
-    stock: Optional[list[BranchStockUpdate]] = None
+    stock: Optional[list[BranchStockUpdate]] = (
+        None
+    )
 
 
 class Product(ProductBase):
     stock: list[BranchStock]
+
     class Config:
         from_attributes = True

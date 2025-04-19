@@ -1,6 +1,9 @@
 # This file contains the main logic of repository of customers
 from typing import List, Optional
-from app.utils.transformers import transform_keys, transform_keys_reverse
+from app.utils.transformers import (
+    transform_keys,
+    transform_keys_reverse,
+)
 
 from app.models.customer import (
     ClientUpdate,
@@ -11,15 +14,6 @@ from app.persistence.db.connection import (
     get_supabase,
 )
 
-client_field_map = {
-    "documento_cliente": "customer_document",
-    "id_tipo_documento": "document_type_id",
-    "nombres_cliente": "first_name",
-    "apellidos_cliente": "last_name",
-    "numero_telefono": "phone_number",
-    "correo_electronico": "email",
-    "direccion_residencia": "home_address",
-} # Check where this data will be managed
 
 class CustomerRepository:
     def __init__(self):
@@ -29,13 +23,17 @@ class CustomerRepository:
     async def create(
         self, new_customer: CreateClient
     ) -> Customer:
-        data = transform_keys_reverse(new_customer.model_dump(), client_field_map)
+        data = transform_keys_reverse(
+            new_customer.model_dump()
+        )
         response = (
             self.supabase.table(self.table)
             .insert(data)
             .execute()
         )
-        return Customer(**transform_keys(response.data[0], client_field_map))
+        return Customer(
+            **transform_keys(response.data[0])
+        )
 
     async def get_by_document(
         self, customer_document: str
@@ -50,11 +48,11 @@ class CustomerRepository:
             .execute()
         )
         if response.data:
-            return Customer(**transform_keys(response.data[0], client_field_map))
+            return Customer(
+                **transform_keys(response.data[0])
+            )
         return None
 
-<<<<<<< HEAD
-=======
     async def inactivate_customer(
         self, customer_document: str
     ) -> bool:
@@ -69,7 +67,6 @@ class CustomerRepository:
         )
         return len(response.data) > 0
 
->>>>>>> b48f1bd6a4e3a82efaff68c3a916de87c48c2814
     async def list_all_customers(
         self, skip: int = 0, limit: int = 100
     ) -> List[Customer]:
@@ -80,7 +77,8 @@ class CustomerRepository:
             .execute()
         )
         return [
-            Customer(**transform_keys(row, client_field_map))for row in response.data
+            Customer(**transform_keys(row))
+            for row in response.data
         ]
 
     async def update(
@@ -91,8 +89,7 @@ class CustomerRepository:
         data = transform_keys_reverse(
             customer.model_dump(
                 exclude_unset=True,
-            ),
-            client_field_map
+            )
         )
         if not data:
             return None
@@ -107,9 +104,11 @@ class CustomerRepository:
             .execute()
         )
         if response.data:
-            return Customer(**transform_keys(response.data[0], client_field_map))
+            return Customer(
+                **transform_keys(response.data[0])
+            )
         return None
-    
+
     async def delete_customer(
         self, customer_document: str
     ) -> bool:

@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.models.branch_stock import (
     CreateBranchStock,
     BranchStockUpdate,
-    BranchStock
+    BranchStock,
 )
 from app.persistence.db.connection import (
     get_supabase,
@@ -28,7 +28,7 @@ class BranchStockRepository:
             .execute()
         )
         return BranchStock(**response.data[0])
-    
+
     async def list_all_stock(
         self, skip: int = 0, limit: int = 100
     ) -> List[BranchStock]:
@@ -43,13 +43,14 @@ class BranchStockRepository:
         return None
 
     async def get_stock_by_product_id(
-        self, id_prodcut,
+        self,
+        id_prodcut,
     ) -> List[BranchStock]:
         response = (
             self.supabase.table(self.table)
             .select("*")
             .eq("id_product", id_prodcut)
-            .range(0,5)
+            .range(0, 5)
             .execute()
         )
         if response.data:
@@ -65,12 +66,14 @@ class BranchStockRepository:
 
         if not data:
             return None
-        
+
         response = (
             self.supabase.table(self.table)
-            .update({"quantity": data["quantity"]})
+            .update(
+                {"quantity": data["quantity"]}
+            )
             .eq("id_product", id_product)
-            .eq("id_branch", data["id_branch"]) 
+            .eq("id_branch", data["id_branch"])
             .execute()
         )
         if response.data:
