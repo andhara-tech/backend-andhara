@@ -2,9 +2,15 @@
 from typing import Union
 from fastapi import HTTPException, status
 
-from app.models.product import CreateProduct, ProductUpdate
+from app.models.product import (
+    CreateProduct,
+    ProductUpdate,
+)
 
-def validate_product_data(product: Union[CreateProduct, ProductUpdate]) -> None:
+
+def validate_product_data(
+    product: Union[CreateProduct, ProductUpdate],
+) -> None:
     """
     Validates the fields of a product object to ensure they meet the required conditions.
     Args:
@@ -19,41 +25,63 @@ def validate_product_data(product: Union[CreateProduct, ProductUpdate]) -> None:
     This function ensures that all numeric fields in the product object have non-negative values.
     """
     # Validate purchase_price
-    if getattr(product, "purchase_price", None) is not None and product.purchase_price < 0:
+    if (
+        getattr(product, "purchase_price", None)
+        is not None
+        and product.purchase_price < 0
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El precio de compra no puede ser negativo."
+            detail="El precio de compra no puede ser negativo.",
         )
 
     # Validate sale_price
-    if getattr(product, "sale_price", None) is not None and product.sale_price < 0:
+    if (
+        getattr(product, "sale_price", None)
+        is not None
+        and product.sale_price < 0
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El precio de venta no puede ser un valor negativo."
+            detail="El precio de venta no puede ser un valor negativo.",
         )
 
     # Validate product_discount
-    if getattr(product, "product_discount", None) is not None and product.product_discount < 0:
+    if (
+        getattr(product, "product_discount", None)
+        is not None
+        and product.product_discount < 0
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El valor de descuento para el producto no puede ser negativo."
+            detail="El valor de descuento para el producto no puede ser negativo.",
         )
 
     # Validate vat
-    if getattr(product, "vat", None) is not None and product.vat < 0:
+    if (
+        getattr(product, "vat", None) is not None
+        and product.vat < 0
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El IVA no puede ser negativo."
-        )
-        
-    # Validate profit_margin
-    if getattr(product, "profit_margin", None) is not None and product.profit_margin < 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El margen de ganancia no puede ser negativo."
+            detail="El IVA no puede ser negativo.",
         )
 
-def calculate_profit_margin(purchase_price: float, sale_price: float) -> float:
+    # Validate profit_margin
+    if (
+        getattr(product, "profit_margin", None)
+        is not None
+        and product.profit_margin < 0
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El margen de ganancia no puede ser negativo.",
+        )
+
+
+def calculate_profit_margin(
+    purchase_price: float, sale_price: float
+) -> float:
     """
     Calculates the profit margin percentage based on the purchase price and sale price.
     Args:
@@ -68,18 +96,34 @@ def calculate_profit_margin(purchase_price: float, sale_price: float) -> float:
         >>> calculate_profit_margin(50, 100)
         100.0
     """
-    if purchase_price is None or sale_price is None:
-        raise ValueError("Para calcular el margen de ganancia el precio de compra y precio de venta son valores obligatorios.")
+    if (
+        purchase_price is None
+        or sale_price is None
+    ):
+        raise ValueError(
+            "Para calcular el margen de ganancia el precio de compra y precio de venta son valores obligatorios."
+        )
     if purchase_price <= 0 or sale_price <= 0:
-        raise ValueError("Para calcular el margen de ganancia el precio de compra y de venta debe ser mayor que cero.")
-    
+        raise ValueError(
+            "Para calcular el margen de ganancia el precio de compra y de venta debe ser mayor que cero."
+        )
+
     margen_ganancia = round(
-        (((sale_price - purchase_price) / purchase_price) * 100),
-        2
+        (
+            (
+                (sale_price - purchase_price)
+                / purchase_price
+            )
+            * 100
+        ),
+        2,
     )
     return margen_ganancia
 
-def validate_stock_quantity(quantity: int) -> bool:
+
+def validate_stock_quantity(
+    quantity: int,
+) -> bool:
     """
     Validates the stock quantity of a product.
 
