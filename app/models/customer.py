@@ -1,9 +1,8 @@
-# This file contains the models for customers
 from pydantic import BaseModel, EmailStr, constr
-from typing import Optional
 from enum import Enum
 from uuid import UUID
 from datetime import date
+from typing import Optional, List
 
 
 class DocumentType(str, Enum):
@@ -26,18 +25,20 @@ class BranchResponse(BaseModel):
 class PurchaseProductResponse(BaseModel):
     id_product: UUID
     product_name: str
-    unit_cuantity: int
-    subẗotal_without_vat: float
-    total_price_without_vat: float
+    unit_quantity: int
+    subtotal_without_vat: float
+    total_price_with_vat: float
 
 
 class PurchaseResponse(BaseModel):
     id_purchase: UUID
-    purchase_date: str
+    purchase_date: date
     purchase_duration: int
-    nex_purchase_date: date
+    next_purchase_date: Optional[date] = (
+        None  # Cambiado a Optional
+    )
     total_purchase: float
-    products: list[PurchaseProductResponse] = []
+    products: List[PurchaseProductResponse] = []
 
 
 class Customer(BaseModel):
@@ -83,7 +84,7 @@ class CreateClient(BaseModel):
     email: EmailStr
     home_address: Optional[str] = None
     customer_state: bool = True
-    id_branch: UUID  # Requerido, ya que ahora customer está vinculado a branch
+    id_branch: UUID
 
 
 class ClientUpdate(BaseModel):
@@ -99,6 +100,5 @@ class ClientUpdate(BaseModel):
     email: Optional[EmailStr] = None
     home_address: Optional[str] = None
     customer_state: Optional[bool] = None
-    id_branch: Optional[UUID] = (
-        None  # Permitir actualizar la sede
-    )
+    id_branch: Optional[UUID] = None
+

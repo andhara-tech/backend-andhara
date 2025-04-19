@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from app.models.customer import (
     ClientUpdate,
@@ -17,38 +17,33 @@ class CustomerService:
     async def create_customer(
         self, customer: CreateClient
     ) -> Customer:
-        # Verify if the customer already exists
-        existing_customer = (
-            await self.repository.get_by_document(
-                customer.customer_document
+        return (
+            await self.repository.create_customer(
+                customer
             )
-        )
-        if existing_customer:
-            raise ValueError(
-                "The current customer already exists in database"
-            )
-        return await self.repository.create(
-            customer
         )
 
     async def get_customer_by_document(
         self, document: str
-    ) -> Optional[Customer]:
-        return (
-            await self.repository.get_by_document(
-                document
-            )
+    ) -> Customer:
+        customer = await self.repository.get_customer_by_document(
+            document
         )
+        if not customer:
+            raise Exception(
+                f"Customer with document '{document}' not found"
+            )
+        return customer
 
     async def inactivate_customer(
-        self, customer_document: str
+        self, document: str
     ) -> bool:
         return await self.repository.inactivate_customer(
-            customer_document
+            document
         )
 
     async def list_all_customers(
-        self, skip: int = 0, limit: int = 100
+        self, skip: int, limit: int
     ) -> List[Customer]:
         return await self.repository.list_all_customers(
             skip, limit
@@ -56,9 +51,16 @@ class CustomerService:
 
     async def update_customer(
         self,
-        customer_document: str,
+        document: str,
         customer: ClientUpdate,
-    ) -> Optional[Customer]:
-        return await self.repository.update(
-            customer_document, customer
+    ) -> Customer:
+        updated_customer = (
+            await self.repository.update_customer(
+                document, customer
+            )
         )
+        if not updated_customer:
+            raise Exception(
+                f"Customer with document '{document}' not found"
+            )
+        return updated_customer
