@@ -13,8 +13,8 @@ from app.models.product import (
 )
 from app.services.product import ProductService
 from app.utils.global_validators import (
-    validate_empty_str, 
-    validate_list
+    validate_empty_str,
+    validate_list,
 )
 from app.utils.products import (
     validate_product_data,
@@ -71,14 +71,26 @@ async def create_product(
         # Validate that the numeric product data does not contain negative values
         validate_product_data(product)
         # Validate that the product name and description are not empty strings
-        validate_empty_str(product.product_name, field_name="Nombre del producto")
-        validate_empty_str(product.product_description, field_name="Descripción del producto")
+        validate_empty_str(
+            product.product_name,
+            field_name="Nombre del producto",
+        )
+        validate_empty_str(
+            product.product_description,
+            field_name="Descripción del producto",
+        )
         # Validate that the stock list is not empty
-        validate_list(product.stock, True, "La lista de stock no puede estar vacía.")
+        validate_list(
+            product.stock,
+            True,
+            "La lista de stock no puede estar vacía.",
+        )
         # Validate that the quantity value in each stock entry is not negative
         for stock_entry in product.stock:
-            validate_stock_quantity(stock_entry.quantity)
-        
+            validate_stock_quantity(
+                stock_entry.quantity
+            )
+
         # process the product creation
         return await service.create_product(
             product
@@ -135,9 +147,9 @@ async def get_product_by_id(
 
 
 @router.get(
-    "/products", response_model=List[Product],
+    "/products",
+    response_model=List[Product],
     status_code=status.HTTP_200_OK,
-    
 )
 async def list_products(
     skip: int = 0,
@@ -203,27 +215,31 @@ async def update_product(
         # Validate that the product data does not contain negative values
         validate_product_data(product)
         # Validate that the product name and description are not empty strings
-<<<<<<< HEAD
-        validate_empty_str(
-            product.product_name,
-            field_name="Product name"
-        )
-        validate_empty_str(
-            product.product_description,
-            field_name="Product description"
-        )
-=======
         if product.product_name is not None:
-            validate_empty_str(product.product_name, field_name="Nombre del producto")
-        if product.product_description is not None:
-            validate_empty_str(product.product_description, field_name="Descripción del producto")
+            validate_empty_str(
+                product.product_name,
+                field_name="Nombre del producto",
+            )
+        if (
+            product.product_description
+            is not None
+        ):
+            validate_empty_str(
+                product.product_description,
+                field_name="Descripción del producto",
+            )
         # If the stock list is provided, validate that it is not empty
         if product.stock is not None:
-            validate_list(product.stock, True, "La lista de stock no puede estar vacía.")
+            validate_list(
+                product.stock,
+                True,
+                "La lista de stock no puede estar vacía.",
+            )
             # Validate that the quantity value in each stock entry is not negative
             for stock_entry in product.stock:
-                validate_stock_quantity(stock_entry.quantity)
->>>>>>> b48f1bd6a4e3a82efaff68c3a916de87c48c2814
+                validate_stock_quantity(
+                    stock_entry.quantity
+                )
         # update the product
         updated_product = (
             await service.update_product(
