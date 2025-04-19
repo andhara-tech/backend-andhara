@@ -1,9 +1,5 @@
 # This file contains the main logic of repository of customers
 from typing import List, Optional
-from app.utils.transformers import (
-    transform_keys,
-    transform_keys_reverse,
-)
 
 from app.models.customer import (
     ClientUpdate,
@@ -21,19 +17,15 @@ class CustomerRepository:
         self.table = "customer"
 
     async def create(
-        self, new_customer: CreateClient
+        self, customer: CreateClient
     ) -> Customer:
-        data = transform_keys_reverse(
-            new_customer.model_dump()
-        )
+        data = customer.model_dump()
         response = (
             self.supabase.table(self.table)
             .insert(data)
             .execute()
         )
-        return Customer(
-            **transform_keys(response.data[0])
-        )
+        return Customer(**response.data[0])
 
     async def get_by_document(
         self, customer_document: str
@@ -48,9 +40,7 @@ class CustomerRepository:
             .execute()
         )
         if response.data:
-            return Customer(
-                **transform_keys(response.data[0])
-            )
+            return Customer(**response.data[0])
         return None
 
     async def inactivate_customer(
@@ -77,8 +67,8 @@ class CustomerRepository:
             .execute()
         )
         return [
-            Customer(**transform_keys(row))
-            for row in response.data
+            Customer(**item)
+            for item in response.data
         ]
 
     async def update(
@@ -86,10 +76,8 @@ class CustomerRepository:
         customer_document: str,
         customer: ClientUpdate,
     ) -> Optional[Customer]:
-        data = transform_keys_reverse(
-            customer.model_dump(
-                exclude_unset=True,
-            )
+        data = customer.model_dump(
+            exclude_unset=True
         )
         if not data:
             return None
@@ -104,21 +92,5 @@ class CustomerRepository:
             .execute()
         )
         if response.data:
-            return Customer(
-                **transform_keys(response.data[0])
-            )
+            return Customer(**response.data[0])
         return None
-
-    async def delete_customer(
-        self, customer_document: str
-    ) -> bool:
-        response = (
-            self.supabase.table(self.table)
-            .delete()
-            .eq(
-                "documento_cliente",
-                customer_document,
-            )
-            .execute()
-        )
-        return len(response.data) > 0
