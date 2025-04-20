@@ -2,7 +2,8 @@ from fastapi import HTTPException, status
 
 
 def validate_empty_str(
-    value: str, field_name: str = "Value"
+    value: str,
+    field_name: str = "Value",
 ) -> None:
     """
     Validates that a given string is not empty or composed solely of whitespace.
@@ -14,8 +15,11 @@ def validate_empty_str(
     Raises:
         HTTPException: If the string is empty or contains only whitespace, an HTTP 400 error is raised
                        with a message indicating that the field cannot be empty.
+
     """
-    if not value.strip():  # This handles empty strings and strings with only whitespace
+    if (
+        not value.strip()
+    ):  # This handles empty strings and strings with only whitespace
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{field_name} no puede estar vacío/a.",
@@ -43,6 +47,7 @@ def validate_list(
 
     Raises:
         HTTPException: If `raise_error` is True and the list is empty, an HTTPException is raised with the provided error message.
+
     """
     if not lst:
         if raise_error:

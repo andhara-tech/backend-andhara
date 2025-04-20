@@ -1,8 +1,9 @@
-from pydantic import BaseModel, EmailStr, constr
-from enum import Enum
-from uuid import UUID
 from datetime import date
-from typing import Optional, List
+from enum import Enum
+from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, EmailStr, constr
 
 
 class DocumentType(str, Enum):
@@ -10,7 +11,7 @@ class DocumentType(str, Enum):
     TI = "TI"
     CE = "CE"
     NIT = "NIT"
-    PASS = "PASS"
+    PASS = "PASS"  # noqa: S105
 
 
 class BranchResponse(BaseModel):
@@ -34,34 +35,34 @@ class PurchaseResponse(BaseModel):
     id_purchase: UUID
     purchase_date: date
     purchase_duration: int
-    next_purchase_date: Optional[date] = (
-        None  # Cambiado a Optional
-    )
+    next_purchase_date: Optional[date] = None
     total_purchase: float
-    products: List[PurchaseProductResponse] = []
+    products: list[PurchaseProductResponse] = []
 
 
 class Customer(BaseModel):
     customer_document: constr(
-        min_length=5, max_length=20
+        min_length=5,
+        max_length=20,
     )
     document_type: DocumentType
     customer_first_name: constr(
-        min_length=1, max_length=100
+        min_length=1,
+        max_length=100,
     )
     customer_last_name: constr(
-        min_length=1, max_length=100
+        min_length=1,
+        max_length=100,
     )
     phone_number: constr(
-        min_length=10, max_length=10
+        min_length=10,
+        max_length=10,
     )
     email: EmailStr
     home_address: Optional[str] = None
     customer_state: bool = True
     branch: Optional[BranchResponse] = None
-    last_purchase: Optional[PurchaseResponse] = (
-        None
-    )
+    last_purchase: Optional[PurchaseResponse] = None
 
     class Config:
         from_attributes = True
@@ -69,17 +70,21 @@ class Customer(BaseModel):
 
 class CreateClient(BaseModel):
     customer_document: constr(
-        min_length=5, max_length=20
+        min_length=5,
+        max_length=20,
     )
     document_type: DocumentType
     customer_first_name: constr(
-        min_length=1, max_length=100
+        min_length=1,
+        max_length=100,
     )
     customer_last_name: constr(
-        min_length=1, max_length=100
+        min_length=1,
+        max_length=100,
     )
     phone_number: constr(
-        min_length=10, max_length=10
+        min_length=10,
+        max_length=10,
     )
     email: EmailStr
     home_address: Optional[str] = None
@@ -88,17 +93,10 @@ class CreateClient(BaseModel):
 
 
 class ClientUpdate(BaseModel):
-    customer_first_name: Optional[
-        constr(min_length=1, max_length=100)
-    ] = None
-    customer_last_name: Optional[
-        constr(min_length=1, max_length=100)
-    ] = None
-    phone_number: Optional[
-        constr(min_length=10, max_length=10)
-    ] = None
+    customer_first_name: Optional[constr(min_length=1, max_length=100)] = None
+    customer_last_name: Optional[constr(min_length=1, max_length=100)] = None
+    phone_number: Optional[constr(min_length=10, max_length=10)] = None
     email: Optional[EmailStr] = None
     home_address: Optional[str] = None
     customer_state: Optional[bool] = None
     id_branch: Optional[UUID] = None
-

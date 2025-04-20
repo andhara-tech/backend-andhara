@@ -1,20 +1,18 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.core.config import settings
 from app.api import (
     authentication,
-    product,
     customer,
+    product,
 )
+from app.core.config import settings
 
 # Init the entry point of the app
-app = FastAPI(
-    title="ANDHARA BACKEND FOR MANAGEMENT"
-)
+app = FastAPI(title="ANDHARA BACKEND FOR MANAGEMENT")
 
 # Config the cors
 app.add_middleware(
@@ -26,16 +24,14 @@ app.add_middleware(
 )
 
 # Include routes
-app.include_router(
-    authentication.router, prefix="/v1"
-)
+app.include_router(authentication.router, prefix="/v1")
 app.include_router(product.router, prefix="/v1")
 app.include_router(customer.router, prefix="/v1")
 
 
 @app.get("/")
-def entry_point():
-    time = datetime.now().strftime("%d-%m-%Y")
+def entry_point() -> JSONResponse:
+    time = datetime.now(timezone.UTC).strftime("%d-%m-%Y")
     return JSONResponse(
         status_code=200,
         content={

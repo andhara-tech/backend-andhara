@@ -1,11 +1,10 @@
 # This file contains all the endpoints related with products
-from typing import List
+from typing import Optional
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 
 from app.api.authentication import verify_user
-from app.models.authentication import UserResponse
 from app.models.product import (
     CreateProduct,
     Product,
@@ -29,9 +28,7 @@ router = APIRouter(
     prefix="/product",
     tags=["Products"],
     responses={
-        404: {
-            "description": "Not found, please contact the admin"
-        }
+        404: {"description": "Not found, please contact the admin"},
     },
 )
 
@@ -42,15 +39,10 @@ service = ProductService()
 
 @router.post(
     "/create-product",
-    response_model=Product,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(verify_user)],
 )
-async def create_product(
-    product: CreateProduct,
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+async def create_product(product: CreateProduct) -> Product:
     """
     Creates a new product.
 
@@ -82,37 +74,32 @@ async def create_product(
         # Validate that the stock list is not empty
         validate_list(
             product.stock,
-            True,
+            True,  # noqa: FBT003
             "La lista de stock no puede estar vacía.",
         )
         # Validate that the quantity value in each stock entry is not negative
         for stock_entry in product.stock:
             validate_stock_quantity(
-                stock_entry.quantity
+                stock_entry.quantity,
             )
 
         # process the product creation
         return await service.create_product(
-            product
+            product,
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.get(
     "/by-id/{id_product}",
-    response_model=Product,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(verify_user)],
 )
-async def get_product_by_id(
-    id_product: str,
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+async def get_product_by_id(id_product: str) -> Product:
     """
     Retrieves a product by id.
 
@@ -131,7 +118,7 @@ async def get_product_by_id(
     """
     try:
         product = await service.get_product_by_id(
-            id_product
+            id_product,
         )
         if not product:
             raise HTTPException(
@@ -143,19 +130,15 @@ async def get_product_by_id(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.get(
     "/products",
-    response_model=List[Product],
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(verify_user)],
 )
-async def list_products(
-    skip: int = 0,
-    limit: int = 100,
-    current_user=Depends(verify_user),
-):
+async def list_products(skip: int = 0, limit: int = 100) -> list[Product]:
     """
     Lists all products with pagination.
 
@@ -173,25 +156,22 @@ async def list_products(
     """
     try:
         return await service.list_all_products(
-            skip, limit
+            skip,
+            limit,
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.put(
     "/update-product/{id_product}",
-    response_model=Product,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(verify_user)],
 )
-async def update_product(
-    id_product: str,
-    product: ProductUpdate,
-    current_user=Depends(verify_user),
-):
+async def update_product(id_product: str, product: ProductUpdate) -> Product:
     """
     Updates a products's information.
 
@@ -220,10 +200,7 @@ async def update_product(
                 product.product_name,
                 field_name="Nombre del producto",
             )
-        if (
-            product.product_description
-            is not None
-        ):
+        if product.product_description is not None:
             validate_empty_str(
                 product.product_description,
                 field_name="Descripción del producto",
@@ -232,19 +209,18 @@ async def update_product(
         if product.stock is not None:
             validate_list(
                 product.stock,
-                True,
+                True,  # noqa: FBT003
                 "La lista de stock no puede estar vacía.",
             )
             # Validate that the quantity value in each stock entry is not negative
             for stock_entry in product.stock:
                 validate_stock_quantity(
-                    stock_entry.quantity
+                    stock_entry.quantity,
                 )
         # update the product
-        updated_product = (
-            await service.update_product(
-                id_product, product
-            )
+        updated_product = await service.update_product(
+            id_product,
+            product,
         )
         if not updated_product:
             raise HTTPException(
@@ -256,20 +232,16 @@ async def update_product(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.patch(
     "/inactivate/{id_product}",
     response_model=str,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(verify_user)],
 )
-async def inactivate_product(
-    id_product: str,
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+async def inactivate_product(id_product: str) -> Optional[str]:
     """
     Inactivate a product by ID.
 
@@ -288,17 +260,14 @@ async def inactivate_product(
     - `404 Not Found` if the product could not be found or inactivate.
     """
     try:
-        if not await service.inactivate_product(
-            id_product
-        ):
+        if not await service.inactivate_product(id_product):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with id '{id_product}' not found or could not be inactivate",
             )
-        else:
-            return f"Product with id '{id_product}' inactivated successfully"
+        return f"Product with id '{id_product}' inactivated successfully"
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e

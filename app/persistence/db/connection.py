@@ -1,11 +1,11 @@
 # File to connect with Supabase
 # Use Singleton patter to instance and create only one instance
-from app.core.config import settings
-
-from supabase import create_client, Client
+from supabase import Client, create_client
 from supabase.lib.client_options import (
     ClientOptions,
 )
+
+from app.core.config import settings
 
 
 class SupabaseClient:

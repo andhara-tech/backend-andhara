@@ -1,0 +1,45 @@
+line-length = 80
+
+[format]
+skip-magic-trailing-comma = false
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[lint]
+extend-select = ["ALL"]
+select = [
+    "D213",  # Docstrings: resumen en segunda línea
+    "D203",  # Docstrings: 1 espacio antes de la segunda línea
+    "E",     # Errores
+    "F",     # Código inválido
+    "W",     # Warnings
+]
+ignore = [
+  "E501",
+  "D206",
+  "D402",
+  "D103",
+  "D104",
+  "D102",
+  "D100",
+  "BLE001",
+  "D404",
+  "D401",
+  "D102",
+  "TRY002",
+  "D101",
+  "D107",
+  "B008",
+  "ANN001",
+  "FA100",
+  "TRY301",
+  "D106",
+  "FBT001",
+  "FBT002",
+  "TRY300",
+  "S101",
+  "COM812",
+  "D211",
+  "D212"
+]

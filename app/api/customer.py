@@ -1,16 +1,15 @@
-from typing import List
 from fastapi import (
     APIRouter,
     Depends,
-    status,
     HTTPException,
+    status,
 )
+
 from app.api.authentication import verify_user
-from app.models.authentication import UserResponse
 from app.models.customer import (
-    Customer,
-    CreateClient,
     ClientUpdate,
+    CreateClient,
+    Customer,
 )
 from app.services.customer import CustomerService
 
@@ -18,9 +17,7 @@ router = APIRouter(
     prefix="/customer",
     tags=["Customers"],
     responses={
-        404: {
-            "description": "Not found, please contact the admin"
-        }
+        404: {"description": "Not found, please contact the admin"},
     },
 )
 
@@ -29,15 +26,12 @@ service = CustomerService()
 
 @router.post(
     "/create-customer",
-    response_model=Customer,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(verify_user)],
 )
 async def create_customer(
     customer: CreateClient,
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+) -> Customer:
     """
     Creates a new customer.
 
@@ -52,25 +46,19 @@ async def create_customer(
     """
     try:
         return await service.create_customer(
-            customer
+            customer,
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get(
-    "/by-document/{document}",
-    response_model=Customer,
-)
+@router.get("/by-document/{document}", dependencies=[Depends(verify_user)])
 async def get_customer_by_document(
     document: str,
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+) -> Customer:
     """
     Retrieves a customer by document.
 
@@ -88,27 +76,22 @@ async def get_customer_by_document(
         - `404 Not Found` if no customer is found with the given document.
     """
     try:
-        customer = await service.get_customer_by_document(
-            document
-        )
-        return customer
+        return await service.get_customer_by_document(document)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.post(
     "/inactivate/{document}",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_user)],
 )
 async def inactivate_customer(
     document: str,
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+) -> None:
     """
     Inactivate a customer by document.
 
@@ -126,10 +109,8 @@ async def inactivate_customer(
         - `404 Not Found` if the customer could not be found or inactivated.
     """
     try:
-        response = (
-            await service.inactivate_customer(
-                document
-            )
+        response = await service.inactivate_customer(
+            document,
         )
         if not response:
             raise HTTPException(
@@ -140,17 +121,14 @@ async def inactivate_customer(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get(
-    "/customers", response_model=List[Customer]
-)
+@router.get("/customers", dependencies=[Depends(verify_user)])
 async def list_clients(
     skip: int = 0,
     limit: int = 100,
-    current_user=Depends(verify_user),
-):
+) -> list[Customer]:
     """
     Lists all customers with pagination.
 
@@ -168,24 +146,24 @@ async def list_clients(
     """
     try:
         return await service.list_all_customers(
-            skip, limit
+            skip,
+            limit,
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.put(
     "/update-customer/{customer_document}",
-    response_model=Customer,
+    dependencies=[Depends(verify_user)],
 )
 async def update_customer(
     customer_document: str,
     customer: ClientUpdate,
-    current_user=Depends(verify_user),
-):
+) -> Customer:
     """
     Updates a customer's information.
 
@@ -205,15 +183,12 @@ async def update_customer(
         - `404 Not Found` if the customer with the given document is not found.
     """
     try:
-        updated_client = (
-            await service.update_customer(
-                customer_document, customer
-            )
+        return await service.update_customer(
+            customer_document,
+            customer,
         )
-        return updated_client
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
-
+        ) from e
