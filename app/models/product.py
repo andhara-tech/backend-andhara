@@ -1,6 +1,7 @@
 # This file contains the models for products into db
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 from app.models.branch_stock import (
     BranchStock,
@@ -44,9 +45,7 @@ class ProductUpdate(BaseModel):
     profit_margin: Optional[float] = None
     product_state: Optional[bool] = None
     vat: Optional[float] = None
-    stock: Optional[list[BranchStockUpdate]] = (
-        None
-    )
+    stock: Optional[list[BranchStockUpdate]] = None
 
 
 class Product(ProductBase):

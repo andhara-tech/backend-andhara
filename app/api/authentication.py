@@ -1,5 +1,5 @@
 # This file contains the authentication system for the project
-from typing import List
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import (
@@ -32,30 +32,23 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
     responses={
-        404: {
-            "description": "Not found, please contact the admin"
-        }
+        404: {"description": "Not found, please contact the admin"},
     },
 )
 
 # Instance the service class using the singleton pattern
 service = AuthenticationService()
 
+
 # Create a new user
-
-
 @router.post("/create-user")
 async def create_user(
     user: CreateUser,
-    supabase: Client = Depends(
-        get_admin_supabase
-    ),
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+    supabase: Annotated[Client, Depends(get_admin_supabase)],
+    current_user: Annotated[UserResponse, Depends(verify_user)],
+) -> JSONResponse:
     """
-    Register a new user (Admin Only)
+    Register a new user (Admin Only).
 
     Creates a new user in the Supabase authentication system.
     This action is **restricted to admin users only**.
@@ -80,7 +73,7 @@ async def create_user(
     # Verify if the current user is and admin user
     # If current user is not an admin user the system will raise an error
     if not is_allowed_user(
-        current_user.user.email
+        current_user.user.email,
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -90,13 +83,9 @@ async def create_user(
         )
     # Validate if the user exist previously
     # List all the existing users
-    user_list: List[User] = (
-        supabase.auth.admin.list_users()
-    )
+    user_list: list[User] = supabase.auth.admin.list_users()
     # Extract only the emails from the current users
-    email_list: List[str] = [
-        user.email for user in user_list
-    ]
+    email_list: list[str] = [user.email for user in user_list]
     if user.email in email_list:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -111,7 +100,7 @@ async def create_user(
                 "password": user.password,
                 "email_confirm": True,  # Auto confirm the email
                 "role": user.role,
-            }
+            },
         )
         user_data: dict = {
             "id": response.user.id,
@@ -127,16 +116,16 @@ async def create_user(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User creation failed - {str(e)}",
-        )
+            detail=f"User creation failed - {e!s}",
+        ) from e
 
 
 # Login exiting users
 @router.post("/login")
 async def login(
     user: BaseUser,
-    supabase: Client = Depends(get_supabase),
-):
+    supabase: Annotated[Client, Depends(get_supabase)],
+) -> JSONResponse:
     """
     Authenticate a user and return an access token.
 
@@ -154,13 +143,11 @@ async def login(
         401 Unauthorized: If the credentials are invalid or login fails.
     """
     try:
-        response = (
-            supabase.auth.sign_in_with_password(
-                {
-                    "email": user.email,
-                    "password": user.password,
-                }
-            )
+        response = supabase.auth.sign_in_with_password(
+            {
+                "email": user.email,
+                "password": user.password,
+            },
         )
         return JSONResponse(
             status_code=200,
@@ -176,20 +163,16 @@ async def login(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Loing failed - {str(e)}",
-        )
+            detail=f"Loing failed - {e!s}",
+        ) from e
 
 
 @router.delete("/delete-user")
 def delete_user(
     user_id: UUID,
-    admin_supabase: Client = Depends(
-        get_admin_supabase
-    ),
-    current_user: UserResponse = Depends(
-        verify_user
-    ),
-):
+    admin_supabase: Annotated[Client, Depends(get_admin_supabase)],
+    current_user: Annotated[UserResponse, Depends(verify_user)],
+) -> JSONResponse:
     """
     Delete a user from Supabase.
 
@@ -207,7 +190,7 @@ def delete_user(
     """
     # Verify if the user is allowed
     if not is_allowed_user(
-        current_user.user.email
+        current_user.user.email,
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -218,7 +201,7 @@ def delete_user(
 
     try:
         admin_supabase.auth.admin.delete_user(
-            user_id
+            user_id,
         )
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -229,18 +212,14 @@ def delete_user(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Error deleting user wiht id '{user_id}' - {str(e)}",
-        )
+            detail=f"Error deleting user wiht id '{user_id}' - {e!s}",
+        ) from e
 
 
-@router.get(
-    "/users",
-    status_code=status.HTTP_200_OK,
-    response_model=List[User],
-)
+@router.get("/users", status_code=status.HTTP_200_OK)
 async def list_all_users(
-    current_user: User = Depends(verify_user),
-):
+    current_user: Annotated[User, Depends(verify_user)],
+) -> list[User]:
     """
     List all users from Supabase.
 
@@ -260,7 +239,7 @@ async def list_all_users(
         # Verify if the current user is and admin user
         # If current user is not an admin user the system will raise an error
         if not is_allowed_user(
-            current_user.user.email
+            current_user.user.email,
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -270,7 +249,7 @@ async def list_all_users(
             )
         return await service.list_all_users()
     except Exception as e:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e

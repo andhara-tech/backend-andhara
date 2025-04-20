@@ -1,6 +1,7 @@
 from typing import Literal
-from pydantic import BaseModel, EmailStr
+
 from gotrue import User
+from pydantic import BaseModel, EmailStr
 
 
 class BaseUser(BaseModel):
@@ -10,7 +11,9 @@ class BaseUser(BaseModel):
 
 class CreateUser(BaseUser):
     role: Literal[
-        "admin", "usuario-bogota", "usuario-cali"
+        "admin",
+        "usuario-bogota",
+        "usuario-cali",
     ]
 
 

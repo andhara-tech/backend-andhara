@@ -1,6 +1,6 @@
 # This file contains the main logic of repository of products
 # It is responsible for interacting with the database and performing CRUD
-from typing import List, Optional
+from typing import Optional
 
 from app.models.product import (
     CreateProduct,
@@ -14,7 +14,6 @@ from app.persistence.db.connection import (
 from app.persistence.repositories.branch_stock import (
     BranchStockRepository,
 )
-
 
 product_field_map = {
     "id_producto": "product_id",
@@ -30,11 +29,9 @@ product_field_map = {
 
 
 class ProductRepository:
-    def __init__(self):
+    def __init__(self) -> None:
         self.supabase = get_supabase()
-        self.stock_repository = (
-            BranchStockRepository()
-        )
+        self.stock_repository = BranchStockRepository()
         self.table = "product"
 
     async def create(
@@ -46,15 +43,12 @@ class ProductRepository:
         # Add the profit margin to the data and delete the stock entry
         data["profit_margin"] = profit_margin
         del data["stock"]
-        response = (
-            self.supabase.table(self.table)
-            .insert(data)
-            .execute()
-        )
+        response = self.supabase.table(self.table).insert(data).execute()
         return ProductBase(**response.data[0])
 
     async def get_by_id(
-        self, id_product: str
+        self,
+        id_product: str,
     ) -> Optional[Product]:
         response = (
             self.supabase.table(self.table)
@@ -70,15 +64,18 @@ class ProductRepository:
             product_data = {
                 **response.data[0],
                 "stock": response.data[0].get(
-                    "branch_stock", []
+                    "branch_stock",
+                    [],
                 ),
             }
             return Product(**product_data)
         return None
 
     async def list_all_products(
-        self, skip: int = 0, limit: int = 100
-    ) -> List[Product]:
+        self,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[Product]:
         response = (
             self.supabase.table(self.table)
             .select("*, branch_stock(*)")
@@ -90,11 +87,12 @@ class ProductRepository:
             product_data = {
                 **item,
                 "stock": item.get(
-                    "branch_stock", []
+                    "branch_stock",
+                    [],
                 ),  # Renaming branch_stock to stock
             }
             products.append(
-                Product(**product_data)
+                Product(**product_data),
             )
         return products
 
@@ -125,18 +123,19 @@ class ProductRepository:
         if response.data:
             # get and add the stock data to the product updated
             stock = await self.stock_repository.get_stock_by_product_id(
-                id_product
+                id_product,
             )
             return Product(
                 **{
                     **response.data[0],
                     "stock": stock,
-                }
+                },
             )
         return None
 
     async def inactivate_product(
-        self, id_product: str
+        self,
+        id_product: str,
     ) -> bool:
         response = (
             self.supabase.table(self.table)

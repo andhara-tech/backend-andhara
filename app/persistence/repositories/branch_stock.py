@@ -1,11 +1,11 @@
 # This file contains the main logic of repository of stock in a branch.
 # It is responsible for interacting with the database and performing CRUD
-from typing import List, Optional
+from typing import Optional
 
 from app.models.branch_stock import (
-    CreateBranchStock,
-    BranchStockUpdate,
     BranchStock,
+    BranchStockUpdate,
+    CreateBranchStock,
 )
 from app.persistence.db.connection import (
     get_supabase,
@@ -13,7 +13,7 @@ from app.persistence.db.connection import (
 
 
 class BranchStockRepository:
-    def __init__(self):
+    def __init__(self) -> None:
         self.supabase = get_supabase()
         self.table = "branch_stock"
 
@@ -22,16 +22,14 @@ class BranchStockRepository:
         stock: CreateBranchStock,
     ) -> BranchStock:
         data = stock.model_dump()
-        response = (
-            self.supabase.table(self.table)
-            .insert(data)
-            .execute()
-        )
+        response = self.supabase.table(self.table).insert(data).execute()
         return BranchStock(**response.data[0])
 
     async def list_all_stock(
-        self, skip: int = 0, limit: int = 100
-    ) -> List[BranchStock]:
+        self,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[BranchStock]:
         response = (
             self.supabase.table(self.table)
             .select("*")
@@ -45,7 +43,7 @@ class BranchStockRepository:
     async def get_stock_by_product_id(
         self,
         id_prodcut,
-    ) -> List[BranchStock]:
+    ) -> list[BranchStock]:
         response = (
             self.supabase.table(self.table)
             .select("*")
@@ -70,7 +68,7 @@ class BranchStockRepository:
         response = (
             self.supabase.table(self.table)
             .update(
-                {"quantity": data["quantity"]}
+                {"quantity": data["quantity"]},
             )
             .eq("id_product", id_product)
             .eq("id_branch", data["id_branch"])
