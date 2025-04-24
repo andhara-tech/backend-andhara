@@ -13,15 +13,9 @@ from app.models.product import (
     Product,
     ProductUpdate,
 )
-from app.persistence.repositories.branch_stock import (
-    BranchStockRepository,
-)
-from app.persistence.repositories.product import (
-    ProductRepository,
-)
-from app.utils.products import (
-    calculate_profit_margin,
-)
+from app.persistence.repositories.branch_stock import BranchStockRepository
+from app.persistence.repositories.product import ProductRepository
+from app.utils.products import calculate_profit_margin
 
 
 class ProductService:
@@ -29,10 +23,7 @@ class ProductService:
         self.repository = ProductRepository()
         self.stock_repository = BranchStockRepository()
 
-    async def create_product(
-        self,
-        product: CreateProduct,
-    ) -> Product:
+    async def create_product(self, product: CreateProduct) -> Product:
         # Calculate the profit margin
         profit_margin = calculate_profit_margin(
             product.purchase_price,
