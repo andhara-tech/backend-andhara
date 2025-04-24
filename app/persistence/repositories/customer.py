@@ -1,53 +1,46 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from supabase import Client  # noqa: TC002
 
 from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
 )
-from app.persistence.db.connection import (
-    get_supabase,
-)
-
-if TYPE_CHECKING:
-    from supabase import Client
+from app.persistence.db.connection import get_supabase
 
 
 class CustomerRepository:
     def __init__(self) -> None:
         self.supabase: Client = get_supabase()
-        self.table = "customer"
 
-    async def create(
-        self,
-        customer: CreateClient,
-    ) -> Customer:
+    async def create_customer(self, customer: CreateClient) -> Customer:
         response = (
-            self.supabase.table(self.table).insert(customer.dict()).execute()
+            self.supabase.table("customer").insert(customer.dict()).execute()
         )
         if not response.data:
             msg = "Error creating customer"
-            raise ValueError(
-                msg,
-            )
-        return await self.get_by_document(
+            raise ValueError(msg)
+        return await self.get_customer_by_document(
             response.data[0]["customer_document"],
         )
 
-    async def get_by_document(
+    async def get_customer_by_document(
         self,
         document: str,
         all_purchases: bool = False,
-    ) -> Optional[Customer]:
+    ) -> Customer | None:
         # Consulta principal para cliente y sede
         query = (
             self.supabase.table("customer")
             .select(
                 """
-                customer_document, document_type, customer_first_name, customer_last_name,
-                phone_number, email, home_address, customer_state, id_branch,
-                branch:branch(id_branch, branch_name, manager_name, branch_address,
-                    city:city(id_city, city_name, department:department(id_department, department_name)))
+                customer_document, document_type, customer_first_name,
+                customer_last_name, phone_number, email, home_address,
+                customer_state, id_branch,
+                branch:branch(id_branch, branch_name, manager_name,
+                    branch_address, city:city(id_city, city_name,
+                        department:department(id_department, department_name)))
                 """,
             )
             .eq("customer_document", document)
@@ -64,26 +57,22 @@ class CustomerRepository:
             self.supabase.table("purchase")
             .select(
                 """
-                id_purchase, purchase_date, purchase_duration, next_purchase_date,
-                purchase_product:purchase_product(id_product, unit_quantity, subtotal_without_vat, total_price_with_vat,
-                    product:product(product_name))
+                id_purchase, purchase_date, purchase_duration,
+                next_purchase_date, purchase_product:purchase_product(
+                    id_product, unit_quantity, subtotal_without_vat,
+                    total_price_with_vat, product:product(product_name))
                 """,
             )
             .eq("customer_document", document)
             .order("purchase_date", desc=True)
         )
         if not all_purchases:
-            purchase_query = purchase_query.limit(
-                1,
-            )
+            purchase_query = purchase_query.limit(1)
 
         purchase_response = purchase_query.execute()
 
         # Procesar los datos
-        branch_data = customer_data.get(
-            "branch",
-            {},
-        )
+        branch_data = customer_data.get("branch", {})
         city_data = branch_data.get("city", {}) if branch_data else {}
         department_data = city_data.get("department", {}) if city_data else {}
         last_purchase = (
@@ -93,9 +82,7 @@ class CustomerRepository:
         # Calcular el total de la compra
         total_purchase = 0
         products = []
-        if last_purchase and last_purchase.get(
-            "purchase_product",
-        ):
+        if last_purchase and last_purchase.get("purchase_product"):
             for pp in last_purchase["purchase_product"]:
                 total_purchase += pp["total_price_with_vat"]
                 products.append(
@@ -105,7 +92,7 @@ class CustomerRepository:
                         "unit_quantity": pp["unit_quantity"],
                         "subtotal_without_vat": pp["subtotal_without_vat"],
                         "total_price_with_vat": pp["total_price_with_vat"],
-                    },
+                    }
                 )
 
         # Estructurar la respuesta
@@ -119,24 +106,12 @@ class CustomerRepository:
             "home_address": customer_data["home_address"],
             "customer_state": customer_data["customer_state"],
             "branch": {
-                "id_branch": branch_data.get(
-                    "id_branch",
-                ),
-                "branch_name": branch_data.get(
-                    "branch_name",
-                ),
-                "manager_name": branch_data.get(
-                    "manager_name",
-                ),
-                "branch_address": branch_data.get(
-                    "branch_address",
-                ),
-                "city_name": city_data.get(
-                    "city_name",
-                ),
-                "department_name": department_data.get(
-                    "department_name",
-                ),
+                "id_branch": branch_data.get("id_branch"),
+                "branch_name": branch_data.get("branch_name"),
+                "manager_name": branch_data.get("manager_name"),
+                "branch_address": branch_data.get("branch_address"),
+                "city_name": city_data.get("city_name"),
+                "department_name": department_data.get("department_name"),
             }
             if branch_data
             else None,
@@ -144,9 +119,7 @@ class CustomerRepository:
                 "id_purchase": last_purchase["id_purchase"],
                 "purchase_date": last_purchase["purchase_date"],
                 "purchase_duration": last_purchase["purchase_duration"],
-                "next_purchase_date": last_purchase.get(
-                    "next_purchase_date",
-                ),
+                "next_purchase_date": last_purchase.get("next_purchase_date"),
                 "total_purchase": total_purchase,
                 "products": products,
             }
@@ -156,17 +129,13 @@ class CustomerRepository:
 
         return Customer(**response_data)
 
-    async def inactivate_customer(
-        self,
-        customer_document: str,
+    async def toggle_customer(
+        self, customer_document: str, status: bool
     ) -> bool:
         response = (
             self.supabase.table("customer")
-            .update({"customer_state": False})
-            .eq(
-                "customer_document",
-                customer_document,
-            )
+            .update({"customer_state": status})
+            .eq("customer_document", customer_document)
             .execute()
         )
         return bool(response.data)
@@ -181,10 +150,11 @@ class CustomerRepository:
             self.supabase.table("customer")
             .select(
                 """
-                customer_document, document_type, customer_first_name, customer_last_name,
-                phone_number, email, home_address, customer_state, id_branch,
-                branch:branch(id_branch, branch_name, manager_name, branch_address,
-                    city:city(id_city, city_name, department:department(id_department, department_name)))
+                customer_document, document_type, customer_first_name,
+                customer_last_name, phone_number, email, home_address,
+                customer_state, id_branch, branch:branch(id_branch,branch_name,
+                manager_name, branch_address,city:city(id_city, city_name,
+                department:department(id_department, department_name)))
                 """,
             )
             .range(skip, skip + limit - 1)
@@ -198,9 +168,10 @@ class CustomerRepository:
                 self.supabase.table("purchase")
                 .select(
                     """
-                    id_purchase, purchase_date, purchase_duration, next_purchase_date,
-                    purchase_product:purchase_product(id_product, unit_quantity, subtotal_without_vat, total_price_with_vat,
-                        product:product(product_name))
+                    id_purchase, purchase_date, purchase_duration,
+                    next_purchase_date, purchase_product:purchase_product(
+                    id_product, unit_quantity, subtotal_without_vat,
+                    total_price_with_vat, product:product(product_name))
                     """,
                 )
                 .eq(
@@ -213,10 +184,7 @@ class CustomerRepository:
             purchase_response = purchase_query.execute()
 
             # Procesar los datos
-            branch_data = customer_data.get(
-                "branch",
-                {},
-            )
+            branch_data = customer_data.get("branch", {})
             city_data = branch_data.get("city", {}) if branch_data else {}
             department_data = (
                 city_data.get("department", {}) if city_data else {}
@@ -228,9 +196,7 @@ class CustomerRepository:
             # Calcular el total de la compra
             total_purchase = 0
             products = []
-            if last_purchase and last_purchase.get(
-                "purchase_product",
-            ):
+            if last_purchase and last_purchase.get("purchase_product"):
                 for pp in last_purchase["purchase_product"]:
                     total_purchase += pp["total_price_with_vat"]
                     products.append(
@@ -254,24 +220,12 @@ class CustomerRepository:
                 "home_address": customer_data["home_address"],
                 "customer_state": customer_data["customer_state"],
                 "branch": {
-                    "id_branch": branch_data.get(
-                        "id_branch",
-                    ),
-                    "branch_name": branch_data.get(
-                        "branch_name",
-                    ),
-                    "manager_name": branch_data.get(
-                        "manager_name",
-                    ),
-                    "branch_address": branch_data.get(
-                        "branch_address",
-                    ),
-                    "city_name": city_data.get(
-                        "city_name",
-                    ),
-                    "department_name": department_data.get(
-                        "department_name",
-                    ),
+                    "id_branch": branch_data.get("id_branch"),
+                    "branch_name": branch_data.get("branch_name"),
+                    "manager_name": branch_data.get("manager_name"),
+                    "branch_address": branch_data.get("branch_address"),
+                    "city_name": city_data.get("city_name"),
+                    "department_name": department_data.get("department_name"),
                 }
                 if branch_data
                 else None,
@@ -289,35 +243,27 @@ class CustomerRepository:
                 else None,
             }
 
-            customers.append(
-                Customer(**response_data),
-            )
+            customers.append(Customer(**response_data))
 
         return customers
 
     async def update_customer(
-        self,
-        customer_document: str,
-        customer: ClientUpdate,
-    ) -> Optional[Customer]:
+        self, customer_document: str, customer: ClientUpdate
+    ) -> Customer | None:
         update_data = {
             k: v for k, v in customer.dict().items() if v is not None
         }
         if not update_data:
-            return await self.get_by_document(
-                document=customer_document,
+            return await self.get_customer_by_document(
+                document=customer_document
             )
         response = (
             self.supabase.table("customer")
             .update(update_data)
-            .eq(
-                "customer_document",
-                customer_document,
-            )
+            .eq("customer_document", customer_document)
             .execute()
         )
         if not response.data:
             return None
-        return await self.get_by_document(
-            document=customer_document,
-        )
+
+        return await self.get_by_document(document=customer_document)
