@@ -2,25 +2,13 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status,
-)
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.responses import JSONResponse
 from gotrue import User
 from supabase import Client
 
-from app.models.authentication import (
-    BaseUser,
-    CreateUser,
-    UserResponse,
-)
-from app.persistence.db.connection import (
-    get_admin_supabase,
-    get_supabase,
-)
+from app.models.authentication import BaseUser, CreateUser, UserResponse
+from app.persistence.db.connection import get_admin_supabase, get_supabase
 from app.services.authentication import (
     AuthenticationService,
     is_allowed_user,
@@ -252,4 +240,42 @@ async def list_all_users(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
+        ) from e
+
+
+@router.post(
+    "/logout",
+    dependencies=[Depends(verify_user)],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def logout_user(
+    authorization: Annotated[str, Header()] = ...,
+) -> JSONResponse:
+    """
+    Log out the currently authenticated user.
+
+    This endpoint invalidates the user's session using Supabase authentication.
+    It requires the user to be authenticated.
+
+    **Returns:**
+    - None
+
+    **Raises:**
+    - HTTPException:
+        - `400 Bad Request` if the logout operation fails.
+    """
+    try:
+        # Get the token from the Authorization header
+        token = authorization.replace("Bearer ", "")
+        # Catch the logout result
+        success = await service.logout_user(token=token)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User logout failed",
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User logout failed - {e!s}",
         ) from e
