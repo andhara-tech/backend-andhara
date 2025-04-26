@@ -188,13 +188,11 @@ def delete_user(
         )
 
     try:
-        admin_supabase.auth.admin.delete_user(
-            user_id,
-        )
+        admin_supabase.auth.admin.delete_user(user_id)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
-                "message": f"User '{user_id}' has been deleted successfully",
+                "message": f"User '{user_id}' has been deleted successfully"
             },
         )
     except Exception as e:
@@ -226,9 +224,7 @@ async def list_all_users(
     try:
         # Verify if the current user is and admin user
         # If current user is not an admin user the system will raise an error
-        if not is_allowed_user(
-            current_user.user.email,
-        ):
+        if not is_allowed_user(current_user.user.email):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"User '{
