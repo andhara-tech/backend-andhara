@@ -86,3 +86,9 @@ class ClientUpdate(BaseModel):
     home_address: str | None = None
     customer_state: bool | None = None
     id_branch: UUID | None = None
+
+
+class CustomerBasic(BaseModel):
+    customer_document: str
+    customer_first_name: str
+    customer_last_name: str

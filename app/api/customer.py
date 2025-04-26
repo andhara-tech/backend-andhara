@@ -10,6 +10,7 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
+    CustomerBasic,
 )
 from app.services.customer import CustomerService
 
@@ -172,4 +173,14 @@ async def update_customer(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        ) from e
+
+
+@router.get("/customers-basic", dependencies=[Depends(verify_user)])
+async def customer_data() -> list[CustomerBasic]:
+    try:
+        return await service.get_customers_basic_data()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
