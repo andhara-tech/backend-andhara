@@ -11,6 +11,7 @@ from app.models.customer import (
     CreateClient,
     Customer,
     CustomerBasic,
+    CustomerByDocumentResponse,
 )
 from app.services.customer import CustomerService
 
@@ -54,7 +55,9 @@ async def create_customer(customer: CreateClient) -> Customer:
 
 
 @router.get("/by-document/{document}", dependencies=[Depends(verify_user)])
-async def get_customer_by_document(document: str) -> Customer:
+async def get_customer_by_document(
+    document: str,
+) -> CustomerByDocumentResponse:
     """
     Retrieves a customer by document.
 
@@ -142,13 +145,13 @@ async def list_clients(skip: int = 0, limit: int = 100) -> list[Customer]:
         ) from e
 
 
-@router.put(
+@router.patch(
     "/update-customer/{customer_document}",
     dependencies=[Depends(verify_user)],
 )
 async def update_customer(
     customer_document: str, customer: ClientUpdate
-) -> Customer:
+) -> CustomerByDocumentResponse:
     """
     Updates a customer's information.
 
@@ -177,7 +180,25 @@ async def update_customer(
 
 
 @router.get("/customers-basic", dependencies=[Depends(verify_user)])
-async def customer_data() -> list[CustomerBasic]:
+async def customer_basic_data() -> list[CustomerBasic]:
+    """
+    Retrieves basic customer information for all customers.
+
+    This endpoint returns a list of customers with minimal identifying
+    information. Requires authenticated access through the verify_user
+    dependency.
+
+    **Returns**:
+    - list[CustomerBasic]: A list containing basic customer data including:
+        - customer_document: Unique identification document
+        - customer_first_name: Customer's first name
+        - customer_last_name: Customer's last name
+
+    **Raises**:
+    - HTTPException:
+        - `400 Bad Request` if any error occurs during data retrieval
+        - `401 Unauthorized` if user authentication fails (by verify_user)
+    """
     try:
         return await service.get_customers_basic_data()
     except Exception as e:

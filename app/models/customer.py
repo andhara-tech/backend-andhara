@@ -41,6 +41,23 @@ class PurchaseResponse(BaseModel):
     products: list[PurchaseProductResponse] = []
 
 
+class CustomerByDocumentResponse(BaseModel):
+    customer_document: constr(min_length=5, max_length=20)
+    document_type: DocumentType
+    customer_first_name: constr(min_length=1, max_length=100)
+    customer_last_name: constr(min_length=1, max_length=100)
+    phone_number: constr(min_length=10, max_length=10)
+    email: EmailStr
+    home_address: str | None = None
+    customer_state: bool
+    total_historical_purchases: float
+    branch: BranchResponse | None = None
+    purchases: list[PurchaseResponse]
+
+    class Config:
+        from_attributes = True
+
+
 class Customer(BaseModel):
     customer_document: constr(min_length=5, max_length=20)
     document_type: DocumentType

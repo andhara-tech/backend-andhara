@@ -3,6 +3,7 @@ from app.models.customer import (
     CreateClient,
     Customer,
     CustomerBasic,
+    CustomerByDocumentResponse,
 )
 from app.persistence.repositories.customer import (
     CustomerRepository,
@@ -16,7 +17,9 @@ class CustomerService:
     async def create_customer(self, customer: CreateClient) -> Customer:
         return await self.repository.create_customer(customer)
 
-    async def get_customer_by_document(self, document: str) -> Customer:
+    async def get_customer_by_document(
+        self, document: str
+    ) -> CustomerByDocumentResponse:
         customer = await self.repository.get_customer_by_document(document)
         if not customer:
             msg = f"Customer with document '{document}' not found"
