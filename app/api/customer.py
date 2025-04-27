@@ -10,6 +10,8 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
+    CustomerBasic,
+    CustomerByDocumentResponse,
 )
 from app.services.customer import CustomerService
 
@@ -29,41 +31,39 @@ service = CustomerService()
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(verify_user)],
 )
-async def create_customer(
-    customer: CreateClient,
-) -> Customer:
+async def create_customer(customer: CreateClient) -> Customer:
     """
     Creates a new customer.
 
     This endpoint allows the creation of a new customer in the system.
     It requires the user to be authenticated and authorized.
 
-    **Args**: customer, The data required to create the customer, including branch ID.
+    **Args**: customer, The data required to create the customer,
+    including branch ID.
 
-    **Returns:** The newly created customer with branch and last purchase details.
+    **Returns:** The newly created customer with branch and last purchase
+    details.
 
     **Raises:** HTTPException with `400 Bad Request` if creation fails.
     """
     try:
-        return await service.create_customer(
-            customer,
-        )
+        return await service.create_customer(customer)
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
 
 
 @router.get("/by-document/{document}", dependencies=[Depends(verify_user)])
 async def get_customer_by_document(
     document: str,
-) -> Customer:
+) -> CustomerByDocumentResponse:
     """
     Retrieves a customer by document.
 
-    This endpoint fetches a customer's information, including their branch and last purchase,
-    using their document number. It requires the user to be authenticated and authorized.
+    This endpoint fetches a customer's information, including their
+    branch and last purchase, using their document number. It requires
+    the user to be authenticated and authorized.
 
     **Args**:
     - document (str): The document number of the customer to retrieve.
@@ -79,19 +79,16 @@ async def get_customer_by_document(
         return await service.get_customer_by_document(document)
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
         ) from e
 
 
-@router.post(
-    "/inactivate/{document}",
+@router.patch(
+    "/toggle-customer/{document}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_user)],
 )
-async def inactivate_customer(
-    document: str,
-) -> None:
+async def toggle_customer(document: str, status: bool = True) -> None:
     """
     Inactivate a customer by document.
 
@@ -109,9 +106,7 @@ async def inactivate_customer(
         - `404 Not Found` if the customer could not be found or inactivated.
     """
     try:
-        response = await service.inactivate_customer(
-            document,
-        )
+        response = await service.toggle_customer(document, status)
         if not response:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -119,55 +114,49 @@ async def inactivate_customer(
             )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
 
 
 @router.get("/customers", dependencies=[Depends(verify_user)])
-async def list_clients(
-    skip: int = 0,
-    limit: int = 100,
-) -> list[Customer]:
+async def list_clients(skip: int = 0, limit: int = 100) -> list[Customer]:
     """
     Lists all customers with pagination.
 
-    This endpoint retrieves a list of customers, including their branch and last purchase details.
-    Supports pagination through `skip` and `limit` parameters.
-    User authentication and authorization are required.
+    This endpoint retrieves a list of customers, including their branch
+    and last purchase details. Supports pagination through `skip` and `limit`
+    parameters. User authentication and authorization are required.
 
     **Args**:
     - skip (int, optional): Number of records to skip. Defaults to 0.
-    - limit (int, optional): Maximum number of records to return. Defaults to 100.
+    - limit (int, optional): Maximum number of records to return.
+      Defaults to 100.
     - current_user: The authenticated user, injected via dependency.
 
     **Returns:**
-    - List[Customer]: A list of customer objects with branch and last purchase details.
+    - List[Customer]: A list of customer objects with branch and last purchase
+      details.
     """
     try:
-        return await service.list_all_customers(
-            skip,
-            limit,
-        )
+        return await service.list_all_customers(skip, limit)
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
 
 
-@router.put(
+@router.patch(
     "/update-customer/{customer_document}",
     dependencies=[Depends(verify_user)],
 )
 async def update_customer(
-    customer_document: str,
-    customer: ClientUpdate,
-) -> Customer:
+    customer_document: str, customer: ClientUpdate
+) -> CustomerByDocumentResponse:
     """
     Updates a customer's information.
 
-    This endpoint updates an existing customer's data, including their branch assignment,
+    This endpoint updates an existing customer's data, including their
+    branch assignment,
     using their document number. The user must be authenticated and authorized.
 
     **Args**:
@@ -176,19 +165,43 @@ async def update_customer(
     - current_user: The authenticated user, injected via dependency.
 
     **Returns:**
-    - Customer: The updated customer data with branch and last purchase details.
+    - Customer: Updated customer data with branch and last purchase details.
 
     **Raises:**
     - HTTPException:
         - `404 Not Found` if the customer with the given document is not found.
     """
     try:
-        return await service.update_customer(
-            customer_document,
-            customer,
-        )
+        return await service.update_customer(customer_document, customer)
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        ) from e
+
+
+@router.get("/customers-basic", dependencies=[Depends(verify_user)])
+async def customer_basic_data() -> list[CustomerBasic]:
+    """
+    Retrieves basic customer information for all customers.
+
+    This endpoint returns a list of customers with minimal identifying
+    information. Requires authenticated access through the verify_user
+    dependency.
+
+    **Returns**:
+    - list[CustomerBasic]: A list containing basic customer data including:
+        - customer_document: Unique identification document
+        - customer_first_name: Customer's first name
+        - customer_last_name: Customer's last name
+
+    **Raises**:
+    - HTTPException:
+        - `400 Bad Request` if any error occurs during data retrieval
+        - `401 Unauthorized` if user authentication fails (by verify_user)
+    """
+    try:
+        return await service.get_customers_basic_data()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e

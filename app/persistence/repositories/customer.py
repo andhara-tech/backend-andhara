@@ -1,55 +1,42 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from supabase import Client  # noqa: TC002
 
 from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
+    CustomerBasic,
+    CustomerByDocumentResponse,
 )
-from app.persistence.db.connection import (
-    get_supabase,
-)
+from app.persistence.db.connection import get_supabase
 
-if TYPE_CHECKING:
-    from supabase import Client
+# Import supbase quries from utils module
+from app.utils.customer import customer_queries
 
 
 class CustomerRepository:
     def __init__(self) -> None:
         self.supabase: Client = get_supabase()
-        self.table = "customer"
 
-    async def create(
-        self,
-        customer: CreateClient,
-    ) -> Customer:
+    async def create_customer(self, customer: CreateClient) -> Customer:
         response = (
-            self.supabase.table(self.table).insert(customer.dict()).execute()
+            self.supabase.table("customer").insert(customer.dict()).execute()
         )
         if not response.data:
-            msg = "Error creating customer"
-            raise ValueError(
-                msg,
-            )
-        return await self.get_by_document(
-            response.data[0]["customer_document"],
-        )
+            msg = "Error creating customer, please try again"
+            raise ValueError(msg)
+        # Get the customer document from the supabase response
+        customer_document = response.data[0].get("customer_document")
+        return await self.get_customer_by_document(customer_document)
 
-    async def get_by_document(
-        self,
-        document: str,
-        all_purchases: bool = False,
-    ) -> Optional[Customer]:
-        # Consulta principal para cliente y sede
+    async def get_customer_by_document(
+        self, document: str
+    ) -> CustomerByDocumentResponse | None:
+        # 1. Get the customer data
         query = (
             self.supabase.table("customer")
-            .select(
-                """
-                customer_document, document_type, customer_first_name, customer_last_name,
-                phone_number, email, home_address, customer_state, id_branch,
-                branch:branch(id_branch, branch_name, manager_name, branch_address,
-                    city:city(id_city, city_name, department:department(id_department, department_name)))
-                """,
-            )
+            .select(customer_queries.get("query_customer_branch"))
             .eq("customer_document", document)
         )
         customer_response = query.execute()
@@ -57,58 +44,60 @@ class CustomerRepository:
         if not customer_response.data:
             return None
 
+        # Get the customer data from the supabase response
         customer_data = customer_response.data[0]
 
-        # Consulta para el último pedido
+        # Search for the last purchase
         purchase_query = (
             self.supabase.table("purchase")
-            .select(
-                """
-                id_purchase, purchase_date, purchase_duration, next_purchase_date,
-                purchase_product:purchase_product(id_product, unit_quantity, subtotal_without_vat, total_price_with_vat,
-                    product:product(product_name))
-                """,
-            )
+            .select(customer_queries.get("query_purchase_product"))
             .eq("customer_document", document)
             .order("purchase_date", desc=True)
         )
-        if not all_purchases:
-            purchase_query = purchase_query.limit(
-                1,
-            )
-
         purchase_response = purchase_query.execute()
 
         # Procesar los datos
-        branch_data = customer_data.get(
-            "branch",
-            {},
-        )
+        branch_data = customer_data.get("branch", {})
         city_data = branch_data.get("city", {}) if branch_data else {}
         department_data = city_data.get("department", {}) if city_data else {}
-        last_purchase = (
-            purchase_response.data[0] if purchase_response.data else None
-        )
+        purchases = purchase_response.data if purchase_response.data else []
 
-        # Calcular el total de la compra
-        total_purchase = 0
-        products = []
-        if last_purchase and last_purchase.get(
-            "purchase_product",
-        ):
-            for pp in last_purchase["purchase_product"]:
-                total_purchase += pp["total_price_with_vat"]
-                products.append(
-                    {
-                        "id_product": pp["id_product"],
-                        "product_name": pp["product"]["product_name"],
-                        "unit_quantity": pp["unit_quantity"],
-                        "subtotal_without_vat": pp["subtotal_without_vat"],
-                        "total_price_with_vat": pp["total_price_with_vat"],
-                    },
-                )
+        processed_purchases = []  # List to store processed purchases
+        # Variable to store total historical purchases
+        total_historical_purchases = 0.0
 
-        # Estructurar la respuesta
+        # Iterate over the purchases
+        for purchase in purchases:
+            total = 0.0
+            products = []
+
+            if purchase.get("purchase_product"):
+                for pp in purchase["purchase_product"]:
+                    purchase_value = pp.get("total_price_with_vat", 0.0)
+                    total += purchase_value
+                    total_historical_purchases += purchase_value
+                    products.append(
+                        {
+                            "id_product": pp["id_product"],
+                            "product_name": pp["product"]["product_name"],
+                            "unit_quantity": pp["unit_quantity"],
+                            "subtotal_without_vat": pp["subtotal_without_vat"],
+                            "total_price_with_vat": pp["total_price_with_vat"],
+                        }
+                    )
+
+            processed_purchases.append(
+                {
+                    "id_purchase": purchase["id_purchase"],
+                    "purchase_date": purchase["purchase_date"],
+                    "purchase_duration": purchase["purchase_duration"],
+                    "next_purchase_date": purchase.get("next_purchase_date"),
+                    "total_purchase": total,
+                    "products": products,
+                }
+            )
+
+        # Estruct the frinal response
         response_data = {
             "customer_document": customer_data["customer_document"],
             "document_type": customer_data["document_type"],
@@ -118,55 +107,27 @@ class CustomerRepository:
             "email": customer_data["email"],
             "home_address": customer_data["home_address"],
             "customer_state": customer_data["customer_state"],
+            "total_historical_purchases": total_historical_purchases,
             "branch": {
-                "id_branch": branch_data.get(
-                    "id_branch",
-                ),
-                "branch_name": branch_data.get(
-                    "branch_name",
-                ),
-                "manager_name": branch_data.get(
-                    "manager_name",
-                ),
-                "branch_address": branch_data.get(
-                    "branch_address",
-                ),
-                "city_name": city_data.get(
-                    "city_name",
-                ),
-                "department_name": department_data.get(
-                    "department_name",
-                ),
-            }
-            if branch_data
-            else None,
-            "last_purchase": {
-                "id_purchase": last_purchase["id_purchase"],
-                "purchase_date": last_purchase["purchase_date"],
-                "purchase_duration": last_purchase["purchase_duration"],
-                "next_purchase_date": last_purchase.get(
-                    "next_purchase_date",
-                ),
-                "total_purchase": total_purchase,
-                "products": products,
-            }
-            if last_purchase
-            else None,
+                "id_branch": branch_data.get("id_branch"),
+                "branch_name": branch_data.get("branch_name"),
+                "manager_name": branch_data.get("manager_name"),
+                "branch_address": branch_data.get("branch_address"),
+                "city_name": city_data.get("city_name"),
+                "department_name": department_data.get("department_name"),
+            },
+            "purchases": processed_purchases if processed_purchases else [],
         }
 
-        return Customer(**response_data)
+        return CustomerByDocumentResponse(**response_data)
 
-    async def inactivate_customer(
-        self,
-        customer_document: str,
+    async def toggle_customer(
+        self, customer_document: str, status: bool
     ) -> bool:
         response = (
             self.supabase.table("customer")
-            .update({"customer_state": False})
-            .eq(
-                "customer_document",
-                customer_document,
-            )
+            .update({"customer_state": status})
+            .eq("customer_document", customer_document)
             .execute()
         )
         return bool(response.data)
@@ -179,14 +140,7 @@ class CustomerRepository:
         # Consulta principal para clientes y sedes
         query = (
             self.supabase.table("customer")
-            .select(
-                """
-                customer_document, document_type, customer_first_name, customer_last_name,
-                phone_number, email, home_address, customer_state, id_branch,
-                branch:branch(id_branch, branch_name, manager_name, branch_address,
-                    city:city(id_city, city_name, department:department(id_department, department_name)))
-                """,
-            )
+            .select(customer_queries.get("query_customer_branch"))
             .range(skip, skip + limit - 1)
         )
         customers_response = query.execute()
@@ -196,13 +150,7 @@ class CustomerRepository:
             # Consulta para el último pedido
             purchase_query = (
                 self.supabase.table("purchase")
-                .select(
-                    """
-                    id_purchase, purchase_date, purchase_duration, next_purchase_date,
-                    purchase_product:purchase_product(id_product, unit_quantity, subtotal_without_vat, total_price_with_vat,
-                        product:product(product_name))
-                    """,
-                )
+                .select(customer_queries.get("query_purchase_product"))
                 .eq(
                     "customer_document",
                     customer_data["customer_document"],
@@ -213,10 +161,7 @@ class CustomerRepository:
             purchase_response = purchase_query.execute()
 
             # Procesar los datos
-            branch_data = customer_data.get(
-                "branch",
-                {},
-            )
+            branch_data = customer_data.get("branch", {})
             city_data = branch_data.get("city", {}) if branch_data else {}
             department_data = (
                 city_data.get("department", {}) if city_data else {}
@@ -228,9 +173,7 @@ class CustomerRepository:
             # Calcular el total de la compra
             total_purchase = 0
             products = []
-            if last_purchase and last_purchase.get(
-                "purchase_product",
-            ):
+            if last_purchase and last_purchase.get("purchase_product"):
                 for pp in last_purchase["purchase_product"]:
                     total_purchase += pp["total_price_with_vat"]
                     products.append(
@@ -254,27 +197,13 @@ class CustomerRepository:
                 "home_address": customer_data["home_address"],
                 "customer_state": customer_data["customer_state"],
                 "branch": {
-                    "id_branch": branch_data.get(
-                        "id_branch",
-                    ),
-                    "branch_name": branch_data.get(
-                        "branch_name",
-                    ),
-                    "manager_name": branch_data.get(
-                        "manager_name",
-                    ),
-                    "branch_address": branch_data.get(
-                        "branch_address",
-                    ),
-                    "city_name": city_data.get(
-                        "city_name",
-                    ),
-                    "department_name": department_data.get(
-                        "department_name",
-                    ),
-                }
-                if branch_data
-                else None,
+                    "id_branch": branch_data.get("id_branch"),
+                    "branch_name": branch_data.get("branch_name"),
+                    "manager_name": branch_data.get("manager_name"),
+                    "branch_address": branch_data.get("branch_address"),
+                    "city_name": city_data.get("city_name"),
+                    "department_name": department_data.get("department_name"),
+                },
                 "last_purchase": {
                     "id_purchase": last_purchase["id_purchase"],
                     "purchase_date": last_purchase["purchase_date"],
@@ -289,35 +218,35 @@ class CustomerRepository:
                 else None,
             }
 
-            customers.append(
-                Customer(**response_data),
-            )
+            customers.append(Customer(**response_data))
 
         return customers
 
     async def update_customer(
-        self,
-        customer_document: str,
-        customer: ClientUpdate,
-    ) -> Optional[Customer]:
+        self, customer_document: str, customer: ClientUpdate
+    ) -> Customer | None:
         update_data = {
             k: v for k, v in customer.dict().items() if v is not None
         }
         if not update_data:
-            return await self.get_by_document(
-                document=customer_document,
+            return await self.get_customer_by_document(
+                document=customer_document
             )
         response = (
             self.supabase.table("customer")
             .update(update_data)
-            .eq(
-                "customer_document",
-                customer_document,
-            )
+            .eq("customer_document", customer_document)
             .execute()
         )
         if not response.data:
             return None
-        return await self.get_by_document(
-            document=customer_document,
+
+        return await self.get_customer_by_document(document=customer_document)
+
+    async def get_customers_basic_data(self) -> list[CustomerBasic]:
+        response = (
+            self.supabase.table("customer")
+            .select(customer_queries.get("query_customer_basic"))
+            .execute()
         )
+        return [CustomerBasic(**customer) for customer in response.data]

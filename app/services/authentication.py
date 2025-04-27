@@ -28,13 +28,6 @@ async def verify_user(
     supabase: Client = Depends(get_supabase),
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UserResponse:
-    """
-    Verifies the JWT token in the Authorization header.
-
-    - Checks if the token is valid using Supabase Auth.
-    - Returns the authenticated user.
-    - Raises `HTTP 401` if invalid.
-    """
     # Get the Authorization header
     token = credentials.credentials
 
@@ -64,3 +57,6 @@ class AuthenticationService:
 
     async def list_all_users(self) -> list[UserResponse]:
         return await self.repository.list_all_users()
+
+    async def logout_user(self, token: str) -> None:
+        return await self.repository.logout_user(token=token)

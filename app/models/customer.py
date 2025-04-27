@@ -1,9 +1,10 @@
-from datetime import date
+from __future__ import annotations
+
+from datetime import date  # noqa: TC003
 from enum import Enum
-from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, constr, validator
 
 
 class DocumentType(str, Enum):
@@ -35,68 +36,76 @@ class PurchaseResponse(BaseModel):
     id_purchase: UUID
     purchase_date: date
     purchase_duration: int
-    next_purchase_date: Optional[date] = None
+    next_purchase_date: date | None = None
     total_purchase: float
     products: list[PurchaseProductResponse] = []
 
 
-class Customer(BaseModel):
-    customer_document: constr(
-        min_length=5,
-        max_length=20,
-    )
+class CustomerByDocumentResponse(BaseModel):
+    customer_document: constr(min_length=5, max_length=20)
     document_type: DocumentType
-    customer_first_name: constr(
-        min_length=1,
-        max_length=100,
-    )
-    customer_last_name: constr(
-        min_length=1,
-        max_length=100,
-    )
-    phone_number: constr(
-        min_length=10,
-        max_length=10,
-    )
+    customer_first_name: constr(min_length=1, max_length=100)
+    customer_last_name: constr(min_length=1, max_length=100)
+    phone_number: constr(min_length=10, max_length=10)
     email: EmailStr
-    home_address: Optional[str] = None
+    home_address: str | None = None
+    customer_state: bool
+    total_historical_purchases: float
+    branch: BranchResponse | None = None
+    purchases: list[PurchaseResponse]
+
+    class Config:
+        from_attributes = True
+
+
+class Customer(BaseModel):
+    customer_document: constr(min_length=5, max_length=20)
+    document_type: DocumentType
+    customer_first_name: constr(min_length=1, max_length=100)
+    customer_last_name: constr(min_length=1, max_length=100)
+    phone_number: constr(min_length=10, max_length=10)
+    email: EmailStr
+    home_address: str | None = None
     customer_state: bool = True
-    branch: Optional[BranchResponse] = None
-    last_purchase: Optional[PurchaseResponse] = None
+    branch: BranchResponse | None = None
+    last_purchase: PurchaseResponse | None = None
 
     class Config:
         from_attributes = True
 
 
 class CreateClient(BaseModel):
-    customer_document: constr(
-        min_length=5,
-        max_length=20,
-    )
+    customer_document: constr(min_length=5, max_length=20)
     document_type: DocumentType
-    customer_first_name: constr(
-        min_length=1,
-        max_length=100,
-    )
-    customer_last_name: constr(
-        min_length=1,
-        max_length=100,
-    )
-    phone_number: constr(
-        min_length=10,
-        max_length=10,
-    )
+    customer_first_name: constr(min_length=1, max_length=100)
+    customer_last_name: constr(min_length=1, max_length=100)
+    phone_number: constr(min_length=10, max_length=10)
     email: EmailStr
-    home_address: Optional[str] = None
+    home_address: str | None = None
     customer_state: bool = True
-    id_branch: UUID
+    id_branch: str
+
+    @validator("id_branch")
+    def id_branch_must_be_uuid(cls, id_branch: str) -> UUID:  # noqa: N805
+        try:
+            UUID(id_branch)
+            return id_branch
+        except ValueError:
+            msg = "id_branch must be a valid UUID"
+            raise ValueError(msg)  # noqa: B904
 
 
 class ClientUpdate(BaseModel):
-    customer_first_name: Optional[constr(min_length=1, max_length=100)] = None
-    customer_last_name: Optional[constr(min_length=1, max_length=100)] = None
-    phone_number: Optional[constr(min_length=10, max_length=10)] = None
-    email: Optional[EmailStr] = None
-    home_address: Optional[str] = None
-    customer_state: Optional[bool] = None
-    id_branch: Optional[UUID] = None
+    customer_first_name: constr(min_length=1, max_length=100) | None = None
+    customer_last_name: constr(min_length=1, max_length=100) | None = None
+    phone_number: constr(min_length=10, max_length=10) | None = None
+    email: EmailStr | None = None
+    home_address: str | None = None
+    customer_state: bool | None = None
+    id_branch: UUID | None = None
+
+
+class CustomerBasic(BaseModel):
+    customer_document: str
+    customer_first_name: str
+    customer_last_name: str

@@ -10,11 +10,13 @@ def validate_empty_str(
 
     Args:
         value (str): The string value to validate.
-        field_name (str, optional): The name of the field being validated. Defaults to "Value".
+        field_name (str, optional): The name of the field being validated.
+        Defaults to "Value".
 
     Raises:
-        HTTPException: If the string is empty or contains only whitespace, an HTTP 400 error is raised
-                       with a message indicating that the field cannot be empty.
+        HTTPException: If the string is empty or contains only whitespace, an
+        HTTP 400 error is raised with a message indicating that the field
+        cannot be empty.
 
     """
     if (
