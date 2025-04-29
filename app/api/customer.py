@@ -1,16 +1,12 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status,
-)
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.authentication import verify_user
 from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerBasic,
     CustomerByDocumentResponse,
 )
 from app.services.customer import CustomerService
@@ -18,9 +14,7 @@ from app.services.customer import CustomerService
 router = APIRouter(
     prefix="/customer",
     tags=["Customers"],
-    responses={
-        404: {"description": "Not found, please contact the admin"},
-    },
+    responses={404: {"description": "Not found, please contact the admin"}},
 )
 
 service = CustomerService()
@@ -119,7 +113,22 @@ async def toggle_customer(document: str, status: bool = True) -> None:
 
 
 @router.get("/customers", dependencies=[Depends(verify_user)])
-async def list_clients(skip: int = 0, limit: int = 100) -> list[Customer]:
+async def list_clients(  # noqa: PLR0913
+    skip: int = 0,
+    limit: int = 100,
+    first_name: Annotated[
+        str | None, Query(description="Customer first name")
+    ] = None,
+    last_name: Annotated[
+        str | None, Query(description="Filter by last name")
+    ] = None,
+    document: Annotated[
+        str | None, Query(description="Filter by document")
+    ] = None,
+    phone_number: Annotated[
+        str | None, Query(description="Filter by phone number")
+    ] = None,
+) -> list[Customer]:
     """
     Lists all customers with pagination.
 
@@ -138,7 +147,9 @@ async def list_clients(skip: int = 0, limit: int = 100) -> list[Customer]:
       details.
     """
     try:
-        return await service.list_all_customers(skip, limit)
+        return await service.list_all_customers(
+            skip, limit, first_name, last_name, document, phone_number
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -176,32 +187,4 @@ async def update_customer(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        ) from e
-
-
-@router.get("/customers-basic", dependencies=[Depends(verify_user)])
-async def customer_basic_data() -> list[CustomerBasic]:
-    """
-    Retrieves basic customer information for all customers.
-
-    This endpoint returns a list of customers with minimal identifying
-    information. Requires authenticated access through the verify_user
-    dependency.
-
-    **Returns**:
-    - list[CustomerBasic]: A list containing basic customer data including:
-        - customer_document: Unique identification document
-        - customer_first_name: Customer's first name
-        - customer_last_name: Customer's last name
-
-    **Raises**:
-    - HTTPException:
-        - `400 Bad Request` if any error occurs during data retrieval
-        - `401 Unauthorized` if user authentication fails (by verify_user)
-    """
-    try:
-        return await service.get_customers_basic_data()
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e

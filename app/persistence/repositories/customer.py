@@ -6,7 +6,6 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerBasic,
     CustomerByDocumentResponse,
 )
 from app.persistence.db.connection import get_supabase
@@ -132,17 +131,31 @@ class CustomerRepository:
         )
         return bool(response.data)
 
-    async def list_all_customers(
+    async def list_all_customers(  # noqa: PLR0913
         self,
         skip: int = 0,
         limit: int = 100,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        document: str | None = None,
+        phone_number: str | None = None,
     ) -> list[Customer]:
         # Consulta principal para clientes y sedes
-        query = (
-            self.supabase.table("customer")
-            .select(customer_queries.get("query_customer_branch"))
-            .range(skip, skip + limit - 1)
+        query = self.supabase.table("customer").select(
+            customer_queries.get("query_customer_branch")
         )
+
+        # Create a match case for filter usign the query params
+        if first_name:
+            query = query.ilike("customer_first_name", f"%{first_name}%")
+        if last_name:
+            query = query.ilike("customer_last_name", f"%{last_name}%")
+        if document:
+            query = query.ilike("customer_document", f"%{document}%")
+        if phone_number:
+            query = query.ilike("phone_number", f"%{phone_number}%")
+
+        query = query.range(skip, skip + limit - 1)
         customers_response = query.execute()
 
         customers = []
@@ -242,11 +255,3 @@ class CustomerRepository:
             return None
 
         return await self.get_customer_by_document(document=customer_document)
-
-    async def get_customers_basic_data(self) -> list[CustomerBasic]:
-        response = (
-            self.supabase.table("customer")
-            .select(customer_queries.get("query_customer_basic"))
-            .execute()
-        )
-        return [CustomerBasic(**customer) for customer in response.data]

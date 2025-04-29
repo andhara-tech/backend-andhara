@@ -2,7 +2,6 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerBasic,
     CustomerByDocumentResponse,
 )
 from app.persistence.repositories.customer import (
@@ -29,12 +28,18 @@ class CustomerService:
     async def toggle_customer(self, document: str, status: bool) -> bool:
         return await self.repository.toggle_customer(document, status)
 
-    async def list_all_customers(
+    async def list_all_customers(  # noqa: PLR0913
         self,
         skip: int,
         limit: int,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        document: str | None = None,
+        phone_number: str | None = None,
     ) -> list[Customer]:
-        return await self.repository.list_all_customers(skip, limit)
+        return await self.repository.list_all_customers(
+            skip, limit, first_name, last_name, document, phone_number
+        )
 
     async def update_customer(
         self,
@@ -48,6 +53,3 @@ class CustomerService:
             msg = f"Customer with document '{document}' not found"
             raise Exception(msg)
         return updated_customer
-
-    async def get_customers_basic_data(self) -> list[CustomerBasic]:
-        return await self.repository.get_customers_basic_data()

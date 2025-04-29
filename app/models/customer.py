@@ -112,9 +112,3 @@ class ClientUpdate(BaseModel):
         except ValueError:
             msg = "id_branch must be a valid UUID"
             raise ValueError(msg)  # noqa: B904
-
-
-class CustomerBasic(BaseModel):
-    customer_document: str
-    customer_first_name: str
-    customer_last_name: str
