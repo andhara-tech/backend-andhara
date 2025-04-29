@@ -2,7 +2,6 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerBasic,
     CustomerByDocumentResponse,
 )
 from app.persistence.repositories.customer import (
@@ -48,6 +47,3 @@ class CustomerService:
             msg = f"Customer with document '{document}' not found"
             raise Exception(msg)
         return updated_customer
-
-    async def get_customers_basic_data(self) -> list[CustomerBasic]:
-        return await self.repository.get_customers_basic_data()

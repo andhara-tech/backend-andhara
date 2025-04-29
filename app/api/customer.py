@@ -10,7 +10,6 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerBasic,
     CustomerByDocumentResponse,
 )
 from app.services.customer import CustomerService
@@ -176,32 +175,4 @@ async def update_customer(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        ) from e
-
-
-@router.get("/customers-basic", dependencies=[Depends(verify_user)])
-async def customer_basic_data() -> list[CustomerBasic]:
-    """
-    Retrieves basic customer information for all customers.
-
-    This endpoint returns a list of customers with minimal identifying
-    information. Requires authenticated access through the verify_user
-    dependency.
-
-    **Returns**:
-    - list[CustomerBasic]: A list containing basic customer data including:
-        - customer_document: Unique identification document
-        - customer_first_name: Customer's first name
-        - customer_last_name: Customer's last name
-
-    **Raises**:
-    - HTTPException:
-        - `400 Bad Request` if any error occurs during data retrieval
-        - `401 Unauthorized` if user authentication fails (by verify_user)
-    """
-    try:
-        return await service.get_customers_basic_data()
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e

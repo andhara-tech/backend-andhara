@@ -6,7 +6,6 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerBasic,
     CustomerByDocumentResponse,
 )
 from app.persistence.db.connection import get_supabase
@@ -242,11 +241,3 @@ class CustomerRepository:
             return None
 
         return await self.get_customer_by_document(document=customer_document)
-
-    async def get_customers_basic_data(self) -> list[CustomerBasic]:
-        response = (
-            self.supabase.table("customer")
-            .select(customer_queries.get("query_customer_basic"))
-            .execute()
-        )
-        return [CustomerBasic(**customer) for customer in response.data]
