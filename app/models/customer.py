@@ -102,7 +102,16 @@ class ClientUpdate(BaseModel):
     email: EmailStr | None = None
     home_address: str | None = None
     customer_state: bool | None = None
-    id_branch: UUID | None = None
+    id_branch: str | None = None
+
+    @validator("id_branch")
+    def id_branch_must_be_uuid(cls, id_branch: str) -> UUID:  # noqa: N805
+        try:
+            UUID(id_branch)
+            return id_branch
+        except ValueError:
+            msg = "id_branch must be a valid UUID"
+            raise ValueError(msg)  # noqa: B904
 
 
 class CustomerBasic(BaseModel):
