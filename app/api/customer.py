@@ -53,6 +53,39 @@ async def create_customer(customer: CreateClient) -> Customer:
 async def get_purchases_by_customer_document(
     document: str,
 ) -> PurchaseByCustomerDocumentResponse:
+    """
+    Retrieves all purchases for a customer by document number.
+
+    This endpoint fetches the complete purchase history for a customer,
+    including detailed product information for each purchase and the
+    total historical purchase amount. It requires the user to be
+    authenticated and authorized.
+
+    **Args**:
+    - document (str): The customer's document number used to filter purchases.
+                     Must be a valid document number (5-20 characters).
+
+    **Returns**:
+    - PurchaseByCustomerDocumentResponse:
+        A structured response containing:
+        - historical_purchases (float): The customer's lifetime total spent
+        - purchases (list[PurchaseResponse]): Detailed list of all purchases
+          Each purchase includes:
+            - Purchase metadata (dates, IDs)
+            - List of purchased products with details
+            - Calculated totals
+
+    **Raises**:
+    - HTTPException:
+        - `404 Not Found` if no customer exists with the given document.
+        - `422 Unprocessable Entity` if the document format is invalid.
+        - `500 Internal Server Error` for unexpected database errors.
+
+    **Notes**:
+    - Purchases are returned in descending date order (most recent first).
+    - Each product includes VAT calculations for accurate financial reporting.
+    - Requires valid JWT authentication via the verify_user dependency.
+    """
     try:
         return await service.get_purchases_by_customer_document(document)
     except Exception as e:
