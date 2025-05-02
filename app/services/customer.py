@@ -2,7 +2,7 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerByDocumentResponse,
+    PurchaseByCustomerDocumentResponse,
 )
 from app.persistence.repositories.customer import (
     CustomerRepository,
@@ -16,17 +16,15 @@ class CustomerService:
     async def create_customer(self, customer: CreateClient) -> Customer:
         return await self.repository.create_customer(customer)
 
-    async def get_customer_by_document(
+    async def get_purchases_by_customer_document(
         self, document: str
-    ) -> CustomerByDocumentResponse:
-        customer = await self.repository.get_customer_by_document(document)
-        if not customer:
-            msg = f"Customer with document '{document}' not found"
-            raise Exception(msg)
-        return customer
+    ) -> list[PurchaseByCustomerDocumentResponse]:
+        return await self.repository.get_purchses_by_customer_document(
+            document,
+        )
 
-    async def toggle_customer(self, document: str, status: bool) -> bool:
-        return await self.repository.toggle_customer(document, status)
+    async def toggle_customer(self, document: str, active: bool) -> Customer:
+        return await self.repository.toggle_customer(document, active)
 
     async def list_all_customers(  # noqa: PLR0913
         self,
