@@ -179,29 +179,59 @@ class CustomerRepository:
             raise ValueError(msg)
         return await self.get_customer_by_document(customer_document)
 
-    async def list_all_customers(  # noqa: PLR0913
+    async def list_all_customers(
         self,
         skip: int = 0,
         limit: int = 100,
-        first_name: str | None = None,
-        last_name: str | None = None,
-        document: str | None = None,
-        phone_number: str | None = None,
+        search: str | None = None,
     ) -> list[Customer]:
         # Consulta principal para clientes y sedes
         query = self.supabase.table("customer").select(
             customer_queries.get("query_customer_branch")
         )
 
-        # Create a match case for filter usign the query params
-        if first_name:
-            query = query.ilike("customer_first_name", f"%{first_name}%")
-        if last_name:
-            query = query.ilike("customer_last_name", f"%{last_name}%")
-        if document:
-            query = query.ilike("customer_document", f"%{document}%")
-        if phone_number:
-            query = query.ilike("phone_number", f"%{phone_number}%")
+        # Create a match case for filter using the query params
+        if search and search.strip():
+            search_item = search.strip()
+            # Agregar comodines para coincidencias parciales
+            search_pattern = f"%{search_item}%"
+
+            # Lista de condiciones para la consulta
+            conditions = []
+
+            # Si el término es numérico, buscar en columnas numéricas
+            if search_item.isnumeric():
+                conditions.extend(
+                    [
+                        f"customer_document.ilike.{search_pattern}",
+                        f"phone_number.ilike.{search_pattern}",
+                    ]
+                )
+            elif " " in search_item:
+                search_words = search_item.split()
+                for word in search_words:
+                    word_pattern = f"%{word}%"
+                    conditions.extend(
+                        [
+                            f"customer_first_name.ilike.{word_pattern}",
+                            f"customer_last_name.ilike.{word_pattern}",
+                        ]
+                    )
+            else:
+                conditions.extend(
+                    [
+                        f"customer_document.ilike.{search_pattern}",
+                        f"customer_first_name.ilike.{search_pattern}",
+                        f"customer_last_name.ilike.{search_pattern}",
+                        f"email.ilike.{search_pattern}",
+                        f"phone_number.ilike.{search_pattern}",
+                        f"home_address.ilike.{search_pattern}",
+                    ]
+                )
+
+            # Unir todas las condiciones con OR
+            or_clause = ",".join(conditions)
+            query = query.or_(or_clause)
 
         query = query.range(skip, skip + limit - 1)
         customers_response = query.execute()

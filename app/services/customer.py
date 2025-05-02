@@ -26,18 +26,13 @@ class CustomerService:
     async def toggle_customer(self, document: str, active: bool) -> Customer:
         return await self.repository.toggle_customer(document, active)
 
-    async def list_all_customers(  # noqa: PLR0913
+    async def list_all_customers(
         self,
         skip: int,
         limit: int,
-        first_name: str | None = None,
-        last_name: str | None = None,
-        document: str | None = None,
-        phone_number: str | None = None,
+        search: str | None = None,
     ) -> list[Customer]:
-        return await self.repository.list_all_customers(
-            skip, limit, first_name, last_name, document, phone_number
-        )
+        return await self.repository.list_all_customers(skip, limit, search)
 
     async def update_customer(
         self,

@@ -130,43 +130,43 @@ async def toggle_customer(document: str, activate: bool) -> Customer:
 
 
 @router.get("/customers", dependencies=[Depends(verify_user)])
-async def list_clients(  # noqa: PLR0913
+async def list_clients(
     skip: int = 0,
     limit: int = 100,
-    first_name: Annotated[
-        str | None, Query(description="Customer first name")
-    ] = None,
-    last_name: Annotated[
-        str | None, Query(description="Filter by last name")
-    ] = None,
-    document: Annotated[
-        str | None, Query(description="Filter by document")
-    ] = None,
-    phone_number: Annotated[
+    search: Annotated[
         str | None, Query(description="Filter by phone number")
     ] = None,
 ) -> list[Customer]:
     """
-    Lists all customers with pagination.
+    Lists all customers with pagination and optional search filtering.
 
-    This endpoint retrieves a list of customers, including their branch
-    and last purchase details. Supports pagination through `skip` and `limit`
-    parameters. User authentication and authorization are required.
+    This endpoint retrieves a paginated list of customers, allowing filtering
+    by a search term across multiple fields (e.g., customer_document,
+    first name, last name, email, phone_number, and home_address). Supports
+    pagination through `skip` and `limit` query parameters. User
+    authentication and authorization are required.
 
-    **Args**:
-    - skip (int, optional): Number of records to skip. Defaults to 0.
-    - limit (int, optional): Maximum number of records to return.
+    **Args:**
+    - search (str, optional): Search term to filter customers. Matches
+      partially across customer_document, customer_first_name,
+      customer_last_name, email, phone_number, and home_address.
+      Defaults to None.
+    - skip (int, optional): Number of records to skip for pagination.
+      Defaults to 0.
+    - limit (int, optional): Maximum number of records to return per page.
       Defaults to 100.
     - current_user: The authenticated user, injected via dependency.
 
     **Returns:**
-    - List[Customer]: A list of customer objects with branch and last purchase
-      details.
+    - List[CustomerResponse]: A paginated list of customer objects. If a search
+      term is provided, the list is filtered to include only matching records.
+
+    **Raises:**
+    - HTTPException 404: If no customers are found matching the search term
+      or pagination criteria.
     """
     try:
-        return await service.list_all_customers(
-            skip, limit, first_name, last_name, document, phone_number
-        )
+        return await service.list_all_customers(skip, limit, search)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
