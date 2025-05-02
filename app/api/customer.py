@@ -7,7 +7,6 @@ from app.models.customer import (
     ClientUpdate,
     CreateClient,
     Customer,
-    CustomerByDocumentResponse,
     PurchaseByCustomerDocumentResponse,
 )
 from app.services.customer import CustomerService
@@ -94,41 +93,12 @@ async def get_purchases_by_customer_document(
         ) from e
 
 
-@router.get("/by-document/{document}", dependencies=[Depends(verify_user)])
-async def get_customer_by_document(
-    document: str,
-) -> CustomerByDocumentResponse:
-    """
-    Retrieves a customer by document.
-
-    This endpoint fetches a customer's information, including their
-    branch and last purchase, using their document number. It requires
-    the user to be authenticated and authorized.
-
-    **Args**:
-    - document (str): The document number of the customer to retrieve.
-
-    **Returns:**
-    - Customer: The customer data with branch and last purchase details.
-
-    **Raises:**
-    - HTTPException:
-        - `404 Not Found` if no customer is found with the given document.
-    """
-    try:
-        return await service.get_customer_by_document(document)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        ) from e
-
-
 @router.patch(
     "/toggle-customer/{document}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     dependencies=[Depends(verify_user)],
 )
-async def toggle_customer(document: str, status: bool = True) -> None:
+async def toggle_customer(document: str, activate: bool) -> Customer:
     """
     Inactivate a customer by document.
 
@@ -146,12 +116,13 @@ async def toggle_customer(document: str, status: bool = True) -> None:
         - `404 Not Found` if the customer could not be found or inactivated.
     """
     try:
-        response = await service.toggle_customer(document, status)
+        response = await service.toggle_customer(document, activate)
         if not response:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Error inactivating the customer",
             )
+        return response
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -208,7 +179,7 @@ async def list_clients(  # noqa: PLR0913
 )
 async def update_customer(
     customer_document: str, customer: ClientUpdate
-) -> CustomerByDocumentResponse:
+) -> Customer:
     """
     Updates a customer's information.
 
