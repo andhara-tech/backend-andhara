@@ -8,6 +8,7 @@ from app.models.customer import (
     CreateClient,
     Customer,
     CustomerByDocumentResponse,
+    PurchaseByCustomerDocumentResponse,
 )
 from app.services.customer import CustomerService
 
@@ -45,6 +46,18 @@ async def create_customer(customer: CreateClient) -> Customer:
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+
+@router.get("/purchases", dependencies=[Depends(verify_user)])
+async def get_purchases_by_customer_document(
+    document: str,
+) -> PurchaseByCustomerDocumentResponse:
+    try:
+        return await service.get_purchases_by_customer_document(document)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
         ) from e
 
 

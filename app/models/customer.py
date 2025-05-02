@@ -41,6 +41,11 @@ class PurchaseResponse(BaseModel):
     products: list[PurchaseProductResponse] = []
 
 
+class PurchaseByCustomerDocumentResponse(BaseModel):
+    historical_purchases: float
+    purchases: list[PurchaseResponse]
+
+
 class CustomerByDocumentResponse(BaseModel):
     customer_document: constr(min_length=5, max_length=20)
     document_type: DocumentType

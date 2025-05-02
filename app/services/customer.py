@@ -3,6 +3,7 @@ from app.models.customer import (
     CreateClient,
     Customer,
     CustomerByDocumentResponse,
+    PurchaseByCustomerDocumentResponse,
 )
 from app.persistence.repositories.customer import (
     CustomerRepository,
@@ -15,6 +16,13 @@ class CustomerService:
 
     async def create_customer(self, customer: CreateClient) -> Customer:
         return await self.repository.create_customer(customer)
+
+    async def get_purchases_by_customer_document(
+        self, document: str
+    ) -> list[PurchaseByCustomerDocumentResponse]:
+        return await self.repository.get_purchses_by_customer_document(
+            document,
+        )
 
     async def get_customer_by_document(
         self, document: str

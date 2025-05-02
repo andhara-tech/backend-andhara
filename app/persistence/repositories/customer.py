@@ -7,6 +7,7 @@ from app.models.customer import (
     CreateClient,
     Customer,
     CustomerByDocumentResponse,
+    PurchaseByCustomerDocumentResponse,
 )
 from app.persistence.db.connection import get_supabase
 
@@ -28,6 +29,65 @@ class CustomerRepository:
         # Get the customer document from the supabase response
         customer_document = response.data[0].get("customer_document")
         return await self.get_customer_by_document(customer_document)
+
+    async def get_purchses_by_customer_document(
+        self, customer_document: str
+    ) -> PurchaseByCustomerDocumentResponse:
+        # Validate if the customer exists
+        customer_response = (
+            self.supabase.table("customer")
+            .select("customer_document")
+            .eq("customer_document", customer_document)
+            .execute()
+        )
+        if not customer_response.data:
+            msg = "Customer not found"
+            raise ValueError(msg)
+
+        purchase_query = (
+            self.supabase.table("purchase")
+            .select(customer_queries.get("query_purchase_product"))
+            .eq("customer_document", customer_document)
+            .order("purchase_date", desc=True)
+        )
+        purchase_response = purchase_query.execute()
+        purchases = purchase_response.data if purchase_response.data else []
+
+        historical_purchases = 0.0
+        processed_purchases = []
+        for purchase in purchases:
+            total = 0.0
+            products = []
+            if purchase.get("purchase_product"):
+                for pp in purchase["purchase_product"]:
+                    purchase_value = pp.get("total_price_with_vat", 0.0)
+                    total += purchase_value
+                    historical_purchases += purchase_value
+                    products.append(
+                        {
+                            "id_product": pp["id_product"],
+                            "product_name": pp["product"]["product_name"],
+                            "unit_quantity": pp["unit_quantity"],
+                            "subtotal_without_vat": pp["subtotal_without_vat"],
+                            "total_price_with_vat": pp["total_price_with_vat"],
+                        }
+                    )
+            processed_purchases.append(
+                {
+                    "id_purchase": purchase["id_purchase"],
+                    "purchase_date": purchase["purchase_date"],
+                    "purchase_duration": purchase["purchase_duration"],
+                    "next_purchase_date": purchase.get("next_purchase_date"),
+                    "total_purchase": total,
+                    "products": products,
+                }
+            )
+
+        response_data = {
+            "historical_purchases": historical_purchases,
+            "purchases": processed_purchases,
+        }
+        return PurchaseByCustomerDocumentResponse(**response_data)
 
     async def get_customer_by_document(
         self, document: str
