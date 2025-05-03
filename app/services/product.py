@@ -105,10 +105,11 @@ class ProductService:
             product,
         )
 
-    async def inactivate_product(
+    async def toogle_status_product(
         self,
         id_product: str,
+        activate: bool
     ) -> bool:
-        return await self.repository.inactivate_product(
-            id_product,
+        return await self.repository.toogle_status_product(
+            id_product, activate
         )
