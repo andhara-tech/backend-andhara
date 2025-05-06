@@ -236,22 +236,22 @@ async def update_product(id_product: str, product: ProductUpdate) -> Product:
 
 
 @router.patch(
-    "/inactivate/{id_product}",
+    "/toggle-product/{id_product}",
     response_model=str,
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(verify_user)],
 )
-async def inactivate_product(id_product: str) -> Optional[str]:
+async def inactivate_product(id_product: str, activate: bool) -> Optional[str]:
     """
-    Inactivate a product by ID.
+    Inactivate or Active a product by ID.
 
     This endpoint allows the deletion of a product from the system
     using its ID number. It requires the user to be authenticated
     and authorized.
 
     **Args**:
-    - id_product (str): The UUID of the product to inactivate.
-
+    - id_product (str): The UUID of the product to inactivate or activate.
+    - activate (bool): True to activate the product, False to inactivate it.
     **Returns:**
     - Confirmation response message.
 
@@ -260,12 +260,12 @@ async def inactivate_product(id_product: str) -> Optional[str]:
     - `404 Not Found` if the product could not be found or inactivate.
     """
     try:
-        if not await service.inactivate_product(id_product):
+        if not await service.toggle_status_product(id_product,activate):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with id '{id_product}' not found or could not be inactivate",
             )
-        return f"Product with id '{id_product}' inactivated successfully"
+        return f"The status of the product with id '{id_product}' was successfully updated."
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

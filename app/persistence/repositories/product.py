@@ -133,13 +133,13 @@ class ProductRepository:
             )
         return None
 
-    async def inactivate_product(
+    async def toggle_status_product(
         self,
-        id_product: str,
+        id_product: str, active: bool
     ) -> bool:
         response = (
             self.supabase.table(self.table)
-            .update({"product_state": False})
+            .update({"product_state": active})
             .eq(
                 "id_product",
                 id_product,
