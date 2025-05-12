@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     supabase_role_key: str
     allowed_cors: str
     email_admin: str
+    email_username: str
+    email_password: str
+    email_to: str
 
     class Config:
         env_file = ".env"
