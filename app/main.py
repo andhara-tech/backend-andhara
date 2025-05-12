@@ -8,10 +8,10 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import authentication, customer, product, purchase
+from app.api import authentication, customer, product, purchase, email_sender
 from app.core.config import settings
 
-# Init the entry point of the app
+# Create the entry point of the app
 app = FastAPI(
     title=settings.app_name,
     description="Andhara Backend for managing products and customers",
@@ -32,6 +32,7 @@ app.include_router(authentication.router, prefix="/v1")
 app.include_router(product.router, prefix="/v1")
 app.include_router(customer.router, prefix="/v1")
 app.include_router(purchase.purchase_router, prefix="/v1")
+app.include_router(email_sender.email_sender_router, prefix="/v1")
 
 
 # calculate the up time
@@ -73,6 +74,7 @@ def get_system_info() -> JSONResponse:
             "database": "supabase",
             "database_status": "connected",
             "cache": "connected",
+            "scheduler": True,
             "external_apis": {},
         },
         "support_contact": {
