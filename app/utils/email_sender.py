@@ -1,8 +1,10 @@
 """Module for manage the email sender."""
 
+from app.models.email_sender import Normalized
+
 
 # Body to for sending emails
-def get_email_body(clients: list[tuple[str, str]]) -> str:
+def get_email_body(customers: list[Normalized]) -> str:
     message_html = """
     <html>
     <head>
@@ -14,7 +16,7 @@ def get_email_body(clients: list[tuple[str, str]]) -> str:
                 padding: 0;
             }
             .container {
-                max-width: 600px;
+                max-width: 800px;
                 margin: 20px auto;
                 padding: 20px;
                 border: 1px solid #ddd;
@@ -65,7 +67,7 @@ def get_email_body(clients: list[tuple[str, str]]) -> str:
             <p>A continuación, se presenta la lista de clientes a contactar hoy:</p>
     """
     # Construir el cuerpo dinámico
-    if not clients:
+    if not customers:
         message_html += """
             <p class="no-data">No hay clientes para contactar hoy.</p>
         """
@@ -73,15 +75,23 @@ def get_email_body(clients: list[tuple[str, str]]) -> str:
         message_html += """
             <table>
                 <tr>
+                    <th>Documento</th>
                     <th>Nombre</th>
                     <th>Teléfono</th>
+                    <th>Estado seguimiento</th>
+                    <th>Duración Pedido (dias)</th>
+                    <th>Fecha Venta</th>
                 </tr>
         """
-        for name, phone in clients:
+        for customer in customers:
             message_html += f"""
                 <tr>
-                    <td>{name}</td>
-                    <td>{phone}</td>
+                    <td>{customer["customer_document"]}</td>
+                    <td>{customer["customer_name"]}</td>
+                    <td>{customer["phone_number"]}</td>
+                    <td>{"Activo" if customer["customer_service_status"] else "Inactivo"}</td>
+                    <td>{customer["purchase_duration"]}</td>
+                    <td>{customer["purchase_date"]}</td>
                 </tr>
             """
         message_html += "</table>"
@@ -90,7 +100,7 @@ def get_email_body(clients: list[tuple[str, str]]) -> str:
     message_html += """
             <div class="footer">
                 <p>Este correo fue generado automáticamente por el sistema de gestión de clientes,
-                por favor no lo responda.</p>
+                por favor no lo responda. Para realizar la gestion de clientes, dirijase a https://andhara.vercel.app/login</p>
                 <p>© 2025 Andhara Tech</p>
             </div>
         </div>
@@ -98,3 +108,19 @@ def get_email_body(clients: list[tuple[str, str]]) -> str:
     </html>
     """
     return message_html
+
+
+# Customer service data from supabase
+customer_service_query = """
+    customer_service_status,
+    purchase(
+        purchase_duration,
+        purchase_date,
+        customer (
+            customer_document,
+            customer_first_name,
+            customer_last_name,
+            phone_number
+        )
+    )
+    """
