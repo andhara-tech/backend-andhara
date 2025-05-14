@@ -8,10 +8,12 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import authentication, customer, product, purchase, email_sender
+from app.api import authentication, customer, product, purchase
 from app.core.config import settings
+from app.core.scheduler_status import SchedulerState
+from app.services.email_sender import ServiceEmailSender
 
-# Create the entry point of the app
+# Init the entry point of the app
 app = FastAPI(
     title=settings.app_name,
     description="Andhara Backend for managing products and customers",
@@ -32,7 +34,31 @@ app.include_router(authentication.router, prefix="/v1")
 app.include_router(product.router, prefix="/v1")
 app.include_router(customer.router, prefix="/v1")
 app.include_router(purchase.purchase_router, prefix="/v1")
-app.include_router(email_sender.email_sender_router, prefix="/v1")
+
+
+# Instance the scheduler state
+scheduler_status = SchedulerState()
+
+
+# Function to update the global variable
+def update_shcheduler_status(success: bool, message: str) -> None:
+    scheduler_status.success = success
+    scheduler_status.message = message
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    try:
+        # Instance the scheduler for sending the email
+        email_service = ServiceEmailSender(callback=update_shcheduler_status)
+        shcheduler_success, msg = email_service(immediate=True)
+        # Show the message when the scheduler fails
+        if not shcheduler_success:
+            raise ValueError(msg)
+
+    except Exception as e:
+        update_shcheduler_status(False, str(e))  # noqa: FBT003
+        raise ValueError(e) from e
 
 
 # calculate the up time
@@ -74,7 +100,8 @@ def get_system_info() -> JSONResponse:
             "database": "supabase",
             "database_status": "connected",
             "cache": "connected",
-            "scheduler": True,
+            "scheduler": scheduler_status.success,
+            "scheduler_message": scheduler_status.message,
             "external_apis": {},
         },
         "support_contact": {

@@ -5,6 +5,7 @@ description = "This is the backend-andhara for migrate and do the main features 
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+  "apscheduler>=3.11.0",
   "fastapi[standard]>=0.115.11",
   "psutil>=7.0.0",
   "pydantic-settings>=2.8.1",
