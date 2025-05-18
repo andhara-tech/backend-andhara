@@ -8,7 +8,7 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import authentication, customer, product, purchase
+from app.api import authentication, customer, customer_service, product, purchase
 from app.core.config import settings
 from app.core.scheduler_status import SchedulerState
 from app.services.email_sender import ServiceEmailSender
@@ -34,6 +34,7 @@ app.include_router(authentication.router, prefix="/v1")
 app.include_router(product.router, prefix="/v1")
 app.include_router(customer.router, prefix="/v1")
 app.include_router(purchase.purchase_router, prefix="/v1")
+app.include_router(customer_service.router, prefix="/v1")
 
 
 # Instance the scheduler state
