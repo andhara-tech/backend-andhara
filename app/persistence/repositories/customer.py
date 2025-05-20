@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from supabase import Client  # noqa: TC002
 
 from app.models.customer import (
@@ -311,7 +313,16 @@ class CustomerRepository:
 
             customers.append(Customer(**response_data))
 
-        return customers
+        # Sort the customers by last purchase date
+        return sorted(
+            customers,
+            key=lambda x: (
+                x.last_purchase.purchase_date
+                if x.last_purchase and x.last_purchase.purchase_date
+                else datetime.min.date()  # noqa: DTZ901
+            ),
+            reverse=True,
+        )
 
     async def update_customer(
         self, customer_document: str, customer: ClientUpdate

@@ -8,7 +8,13 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import authentication, customer, customer_service, product, purchase
+from app.api import (
+    authentication,
+    customer,
+    customer_service,
+    product,
+    purchase,
+)
 from app.core.config import settings
 from app.core.scheduler_status import SchedulerState
 from app.services.email_sender import ServiceEmailSender
@@ -52,7 +58,7 @@ async def startup_event() -> None:
     try:
         # Instance the scheduler for sending the email
         email_service = ServiceEmailSender(callback=update_shcheduler_status)
-        shcheduler_success, msg = email_service(immediate=True)
+        shcheduler_success, msg = email_service(immediate=False)
         # Show the message when the scheduler fails
         if not shcheduler_success:
             raise ValueError(msg)
