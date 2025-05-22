@@ -1,12 +1,13 @@
 
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 
 def calculate_days_remaining(
     next_contact_date_str: str
 ) -> date:
     days_remaining = None
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(ZoneInfo("America/Bogota")).date()
 
     if isinstance(next_contact_date_str, str):
         # Try to parse with or without the time/timezone part
