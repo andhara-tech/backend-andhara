@@ -90,6 +90,7 @@ class CustomerServiceForTable(BaseModel):
     id_customer_service: UUID4
     id_purchase: UUID4
     service_date: date
+    customer_document: str
     customer_full_name: str
     phone_number: Optional[str] = None
     branch_name: str
