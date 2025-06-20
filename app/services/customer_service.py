@@ -57,6 +57,7 @@ class CustomerServiceService:
                     id_customer_service=service_db.id_customer_service,
                     service_date=service_db.service_date,
                     id_purchase=service_db.id_purchase,
+                    customer_document=service_db.purchase.customer_document,
                     customer_full_name=f"{customer.customer_first_name} {customer.customer_last_name}",
                     phone_number=customer.phone_number,
                     id_branch=customer.id_branch,
